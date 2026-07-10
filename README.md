@@ -123,11 +123,13 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 1. 网关执行任务并按 `max_retries` 重试。
 2. 最终失败时统一收集业务源码绝对路径、完整堆栈、截图路径和原始参数。
 3. 修复上下文始终写入 `runtime/snapshots/healing/`。
-4. 配置 `AUTOMATION_HEALING_URL` 后，网关将上下文 POST 给实际部署的 Codex 执行器。
+4. 默认通过官方非交互方式 `codex exec --sandbox workspace-write` 在隔离项目副本中调用本机已认证 Codex CLI；设置 `AUTOMATION_HEALING_BACKEND=http` 后则把内容 POST 给远端执行器。
 5. 执行器修改对应网页 `task.py`，或修改 AHK 源码并重新编译已注册 EXE，验证后返回 `{"fixed": true}`。
 6. 网关重新加载该业务模块并自动重跑一次；不会无限自愈循环。
 
-中台本身无法在没有执行器 URL、鉴权和文件权限的情况下凭空调用 Codex。未配置回调时仍完整留存修复证据，但任务会进入 `failed`，避免虚假宣称已自愈。
+本地 Codex 对隔离副本的其他修改会被丢弃，网关只会把已验证的目标业务源码与 AHK 编译产物成组回写。HTTP 执行器也只返回候选源码内容（AHK 另返回 Base64 编译产物），真实工作区写入仍由网关白名单控制。
+
+本地模式要求 `AUTOMATION_CODEX_COMMAND` 指向可由后台账户执行且已认证的 Codex CLI。部分 Windows Store 桌面应用别名会拒绝后台进程启动，此时应安装独立 CLI，或切换 HTTP 后端。任何执行器不可用时仍完整留存修复证据，任务进入 `failed`，不会虚假宣称已自愈。
 
 ## 新增业务规范
 

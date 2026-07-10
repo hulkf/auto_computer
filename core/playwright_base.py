@@ -40,6 +40,7 @@ class BrowserContextPool:
         self._playwright: Playwright | None = None
         self._contexts: dict[str, BrowserContext] = {}
         self._context_locks: dict[str, asyncio.Lock] = {}
+        self._last_used: dict[str, float] = {}
         self._pool_lock = asyncio.Lock()
         self.logger = get_logger(__name__)
 
@@ -58,9 +59,22 @@ class BrowserContextPool:
         async with self._pool_lock:
             existing = self._contexts.get(profile_name)
             if existing:
+                self._last_used[profile_name] = time.monotonic()
                 return existing
             if len(self._contexts) >= self.max_contexts:
-                raise RuntimeError(f"浏览器上下文池已满，最大数量为 {self.max_contexts}")
+                # 关闭最久未使用且当前没有任务持有的上下文；用户数据仍在磁盘保留。
+                idle_profiles = [
+                    name
+                    for name in self._contexts
+                    if not self._context_locks.setdefault(name, asyncio.Lock()).locked()
+                ]
+                if not idle_profiles:
+                    raise RuntimeError(f"浏览器上下文池繁忙，最大数量为 {self.max_contexts}")
+                oldest = min(idle_profiles, key=lambda name: self._last_used.get(name, 0.0))
+                old_context = self._contexts.pop(oldest)
+                self._last_used.pop(oldest, None)
+                await old_context.close()
+                self.logger.info("Evicted idle browser context: %s", oldest)
             assert self._playwright is not None
             profile_dir = (BROWSER_PROFILE_DIR / profile_name).resolve()
             profile_dir.mkdir(parents=True, exist_ok=True)
@@ -76,6 +90,7 @@ class BrowserContextPool:
             context.set_default_navigation_timeout(timeout_ms)
             self._contexts[profile_name] = context
             self._context_locks.setdefault(profile_name, asyncio.Lock())
+            self._last_used[profile_name] = time.monotonic()
             self.logger.info("Persistent browser context opened: %s", profile_name)
             return context
 
@@ -93,6 +108,7 @@ class BrowserContextPool:
             except Exception:
                 self.logger.exception("Failed to close a browser context")
         self._contexts.clear()
+        self._last_used.clear()
         if self._playwright:
             await self._playwright.stop()
             self._playwright = None

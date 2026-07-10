@@ -91,7 +91,7 @@ class TaskManager:
         async with self.state_lock:
             self.records[task_id] = record
             await self._save(record, "submitted")
-        task = asyncio.create_task(self._run(task_id), name=f"automation-task-{task_id}")
+        task = asyncio.create_task(self._run_guarded(task_id), name=f"automation-task-{task_id}")
         self.background_tasks.add(task)
         task.add_done_callback(self.background_tasks.discard)
         return record.model_copy(deep=True)
@@ -189,13 +189,18 @@ class TaskManager:
                 and record.business_source
             ):
                 await self._transition(task_id, TaskStatus.HEALING, "healing_started")
+                artifact_path = None
+                if request.kind == "desktop":
+                    artifact_path, _ = get_desktop_executable(request.business)
                 fixed = await self.self_healer.repair(
                     task_id=task_id,
                     business=request.business,
                     source_path=Path(record.business_source),
                     error_traceback=record.error_traceback or "unknown error",
                     screenshot=record.screenshot,
-                    params=request.params,
+                    request_payload=request.model_dump(mode="json"),
+                    task_result=record.result or result(code=500, msg="unknown error"),
+                    artifact_path=artifact_path,
                 )
                 if fixed:
                     record.healed = True
@@ -212,6 +217,22 @@ class TaskManager:
                     await self._save(record, "healed_rerun_failed")
 
             await self._finish(record, TaskStatus.FAILED, "failed")
+
+    async def _run_guarded(self, task_id: str) -> None:
+        """后台任务最外层保险：任何未预见异常都必须写入 failed 终态。"""
+
+        try:
+            await self._run(task_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            async with self.state_lock:
+                record = self.records[task_id]
+                record.status = TaskStatus.FAILED
+                record.finished_at = utc_now_iso()
+                record.error_traceback = traceback.format_exc()
+                record.result = result(code=500, msg=str(exc), data={"traceback": record.error_traceback})
+                await self._save(record, "unhandled_execution_failure")
 
     async def _finish(self, record: TaskRecord, status: TaskStatus, event: str) -> None:
         """写入任务终态和结束时间。"""

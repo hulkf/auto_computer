@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 import tempfile
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ TASK_LOG_DIR = LOG_DIR / "tasks"
 RUNTIME_DIR = PROJECT_ROOT / "runtime"
 SNAPSHOT_DIR = RUNTIME_DIR / "snapshots"
 BROWSER_PROFILE_DIR = PROJECT_ROOT / "browser_profiles"
+_SHARED_HANDLERS: tuple[logging.Handler, logging.Handler] | None = None
 
 
 def ensure_directories() -> None:
@@ -93,14 +95,23 @@ def get_logger(name: str, task_id: str | None = None) -> logging.LoggerAdapter:
     logger = logging.getLogger(name)
     logger.setLevel(os.getenv("AUTOMATION_LOG_LEVEL", "INFO").upper())
     logger.propagate = False
-    if not logger.handlers:
+    global _SHARED_HANDLERS
+    if _SHARED_HANDLERS is None:
         formatter = JsonFormatter()
         stream = logging.StreamHandler()
         stream.setFormatter(formatter)
-        daily_file = logging.FileHandler(LOG_DIR / "automation.log", encoding="utf-8")
-        daily_file.setFormatter(formatter)
-        logger.addHandler(stream)
-        logger.addHandler(daily_file)
+        rotating_file = TimedRotatingFileHandler(
+            LOG_DIR / "automation.log",
+            when="midnight",
+            backupCount=30,
+            encoding="utf-8",
+            utc=True,
+        )
+        rotating_file.setFormatter(formatter)
+        _SHARED_HANDLERS = (stream, rotating_file)
+    if not logger.handlers:
+        for handler in _SHARED_HANDLERS:
+            logger.addHandler(handler)
     return logging.LoggerAdapter(logger, {"task_id": task_id} if task_id else {})
 
 
