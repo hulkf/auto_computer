@@ -142,6 +142,25 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 
 ## 验证
 
+### CodeGraph 代码图谱
+
+项目已启用 CodeGraph。首次克隆后在项目根目录构建本机索引：
+
+```powershell
+codegraph init .
+codegraph status
+```
+
+`.codegraph/codegraph.db` 是本机生成数据，不提交到 Git。后续理解或定位代码时优先使用 Codex 的 `codegraph_explore` MCP 工具；MCP 不可用时使用：
+
+```powershell
+codegraph explore "要理解的符号或代码问题"
+```
+
+索引会随代码变化自动同步，也可以手动执行 `codegraph sync`。
+
+## 工程验证
+
 ```powershell
 .\.venv\Scripts\python.exe -m compileall core business gateway
 .\.venv\Scripts\python.exe -m pytest
