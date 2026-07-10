@@ -3,4 +3,3 @@
 from .common_utils import result
 
 __all__ = ["result"]
-

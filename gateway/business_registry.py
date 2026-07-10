@@ -110,4 +110,3 @@ def load_web_business(name: str):
     if not run or not inspect.iscoroutinefunction(run):
         raise TypeError(f"业务模块必须实现 async run(...): {definition.module}")
     return run
-

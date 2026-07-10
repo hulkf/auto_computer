@@ -56,4 +56,3 @@ async def run(
         }
 
     return await automation.execute(search)
-
