@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import sys
@@ -10,7 +11,7 @@ import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, IO
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from .common_utils import BROWSER_PROFILE_DIR, RUNTIME_DIR, get_logger, read_json, utc_now_iso, write_json
 
@@ -87,7 +88,7 @@ class CodegenRecorder:
 
     @staticmethod
     def _build_command(output: Path, profile_dir: Path, start_url: str) -> list[str]:
-        """Build the local Python Codegen command without shell interpolation."""
+        """Build Codegen command with a stable bootstrap page before target navigation."""
 
         command = [
             sys.executable,
@@ -101,7 +102,16 @@ class CodegenRecorder:
         channel = os.getenv("AUTOMATION_BROWSER_CHANNEL", "chrome").strip()
         if channel:
             command.append(f"--channel={channel}")
-        command.append(start_url)
+        # Direct Codegen navigation can exit with net::ERR_ABORTED when a site redirects
+        # or the user acts before the initial load finishes. A tiny page loads first and
+        # redirects only after Inspector/recording startup has settled.
+        bootstrap_html = (
+            "<!doctype html><meta charset='utf-8'><title>启动录制</title>"
+            "<p>Codegen 已启动，正在打开目标网页……</p>"
+            "<script>setTimeout(() => window.location.replace("
+            f"{json.dumps(start_url)}), 800);</script>"
+        )
+        command.append(f"data:text/html;charset=utf-8,{quote(bootstrap_html)}")
         return command
 
     def _session_dir(self, session: RecordingSession) -> Path:

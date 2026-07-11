@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from urllib.parse import unquote
 
 import pytest
 
@@ -28,7 +29,9 @@ def test_codegen_command_uses_async_python_and_persistent_profile(monkeypatch, t
     assert "--target=python-async" in command
     assert f"--output={output}" in command
     assert f"--user-data-dir={profile}" in command
-    assert command[-1] == "https://example.com"
+    assert command[-1].startswith("data:text/html;charset=utf-8,")
+    assert "https://example.com" in unquote(command[-1])
+    assert "setTimeout" in unquote(command[-1])
 
 
 def test_recorder_starts_and_stops_one_visible_process(monkeypatch, tmp_path) -> None:
