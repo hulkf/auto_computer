@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Donezo Console - Business List</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hanken+Grotesk:wght@600;700&family=JetBrains+Mono&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#092012",
+                        "on-secondary-fixed-variant": "#354c3b",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#cee9d3",
+                        "surface-dim": "#d9dadb",
+                        "primary": "#012d1d",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#86af99",
+                        "secondary-fixed-dim": "#b3cdb7",
+                        "on-tertiary-container": "#75b393",
+                        "on-background": "#191c1d",
+                        "primary-fixed": "#c1ecd4",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#002d1c",
+                        "on-tertiary-fixed": "#002114",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "surface": "#f8f9fa",
+                        "inverse-primary": "#a5d0b9",
+                        "primary-container": "#1b4332",
+                        "secondary-container": "#cce6d0",
+                        "primary-fixed-dim": "#a5d0b9",
+                        "tertiary-fixed": "#b1f0ce",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline": "#717973",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3f6653",
+                        "on-secondary-container": "#506856",
+                        "on-primary-fixed-variant": "#274e3d",
+                        "on-primary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00452e",
+                        "outline-variant": "#c1c8c2",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-surface-variant": "#414844",
+                        "on-tertiary-fixed-variant": "#0e5138",
+                        "secondary": "#4c6452",
+                        "tertiary-fixed-dim": "#95d4b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-gap": "20px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px",
+                        "container-padding": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "code-snippet": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-snippet": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f8f9fa;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cee9d3;
+            border-radius: 10px;
+        }
+        .active-pill {
+            background-color: #012d1d;
+            color: white;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<div class="flex min-h-screen overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="bg-surface-container-lowest dark:bg-primary-container w-[260px] h-screen sticky top-0 left-0 shadow-sm dark:shadow-none flex flex-col h-full py-6">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary flex items-center justify-center rounded-xl overflow-hidden">
+<span class="material-symbols-outlined text-white text-[24px]">cloud_sync</span>
+</div>
+<div>
+<h1 class="font-headline-md text-[20px] font-bold text-primary dark:text-primary-fixed leading-tight">Donezo</h1>
+<p class="text-[11px] font-medium text-on-surface-variant uppercase tracking-wider">Automation Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 overflow-y-auto px-2 custom-scrollbar">
+<div class="px-4 py-2 text-xs font-bold text-outline uppercase tracking-widest mb-2">Main Menu</div>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Business is Active -->
+<a class="text-primary font-bold border-l-4 border-primary bg-surface-container-high px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">business_center</span>
+<span>Business</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">add_task</span>
+<span>New Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Batch Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">search_check</span>
+<span>Task Query</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span>Runtime Env</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">api</span>
+<span>API Debug</span>
+</a>
+</nav>
+<!-- Sidebar CTA Card -->
+<div class="mx-4 my-6 p-4 rounded-xl bg-primary-container relative overflow-hidden group">
+<div class="relative z-10">
+<p class="text-primary-fixed font-title-sm text-[14px] mb-2">Download Mobile App</p>
+<p class="text-on-primary-container text-[11px] mb-4">Monitor your automation workflows on the go.</p>
+<button class="bg-primary-fixed text-primary px-4 py-2 rounded-lg text-[12px] font-bold w-full transition-transform active:scale-95">Download</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+<span class="material-symbols-outlined text-[100px] text-white">smartphone</span>
+</div>
+</div>
+<div class="mt-auto px-2 space-y-1 border-t border-surface-variant pt-4">
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Help</span>
+</a>
+<a class="text-on-surface-variant hover:text-error px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col min-w-0 bg-background h-screen overflow-y-auto">
+<!-- TopAppBar Component -->
+<header class="h-20 w-full sticky top-0 z-40 bg-surface dark:bg-surface-dim flex justify-between items-center px-gutter w-full max-w-[1180px] mx-auto">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full pl-12 pr-12 py-3 bg-surface-container-low border-none rounded-full text-body-md focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search task or business..." type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-0.5 border border-outline-variant rounded bg-white text-[10px] font-bold text-outline">⌘ F</div>
+</div>
+</div>
+<div class="flex items-center gap-6 ml-gutter">
+<div class="hidden lg:flex items-center gap-2 bg-secondary-container px-4 py-2 rounded-full">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-[12px] font-bold text-on-secondary-container">Gateway: Online</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<button class="p-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-surface-variant">
+<div class="text-right hidden sm:block">
+<p class="font-title-sm text-[14px] text-on-surface">Totok Michael</p>
+<p class="text-[11px] text-on-surface-variant">tmichael20@mail.com</p>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-primary-fixed overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a software developer with a friendly expression. The portrait is taken in a modern, brightly lit office environment with soft natural light. He is wearing a minimalist dark green sweater that matches the corporate brand colors of the automation platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD573iMfc9mPF54tinwHTyAzg6yYzKO636leUwsCEe56zCMAeDqDupTLK1e23WLJzyUSDjOrCZpSi7qntojmqNukmeY0FETjZL1IfUpgK7Tb4O5Q7SObJcuM8xoOcBQycouNdy306CGRCNWn7ObTqw-B_sen7KcCN9Hbop5wV8icBa1uCxjeVnVHslN6eihrsip-zBkJf9SMOCqxSHT0AkSqPD1uw5hrilY_oIEjKnYuXom-3D_h145fw"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-gutter lg:p-container-padding max-w-[1180px] mx-auto w-full space-y-card-gap">
+<!-- Page Header & Main Actions -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-md text-primary">Business List</h2>
+<p class="text-on-surface-variant font-body-md">Manage and monitor registered business modules across your infrastructure.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-surface-container-lowest border border-outline-variant text-primary px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-surface-container transition-all active:scale-98">
+<span class="material-symbols-outlined text-[20px]">cloud_upload</span>
+                            Import Data
+                        </button>
+<button class="bg-primary text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:opacity-90 shadow-lg shadow-primary/10 transition-all active:scale-98">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                            Register Business
+                        </button>
+</div>
+</div>
+<!-- Filters Bento -->
+<div class="bg-white p-4 rounded-2xl shadow-[0px_4px_20px_rgba(27,67,50,0.05)] border border-surface-variant/30 flex flex-col md:flex-row items-center gap-6">
+<div class="flex items-center p-1 bg-surface-container-low rounded-xl w-full md:w-auto">
+<button class="px-6 py-2 rounded-lg text-[13px] font-bold active-pill transition-all">All</button>
+<button class="px-6 py-2 rounded-lg text-[13px] font-bold text-on-surface-variant hover:text-primary transition-all">Web</button>
+<button class="px-6 py-2 rounded-lg text-[13px] font-bold text-on-surface-variant hover:text-primary transition-all">Desktop</button>
+<button class="px-6 py-2 rounded-lg text-[13px] font-bold text-on-surface-variant hover:text-primary transition-all">Mobile</button>
+</div>
+<div class="flex-1 relative w-full group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">filter_list</span>
+<input class="w-full pl-12 pr-4 py-2.5 bg-transparent border-b-2 border-surface-container-high focus:border-primary outline-none text-body-md transition-all" placeholder="Filter by name, path, or module type..." type="text"/>
+</div>
+<div class="flex items-center gap-4 w-full md:w-auto">
+<p class="text-[12px] font-bold text-outline uppercase whitespace-nowrap">Sort By:</p>
+<select class="bg-surface-container-low border-none rounded-lg text-body-sm focus:ring-primary/20 cursor-pointer">
+<option>Recently Added</option>
+<option>Name (A-Z)</option>
+<option>System Load</option>
+</select>
+</div>
+</div>
+<!-- Data Table Card -->
+<div class="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(27,67,50,0.05)] border border-surface-variant/30 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 font-label-caps text-outline uppercase tracking-widest text-[10px]">Name</th>
+<th class="px-6 py-4 font-label-caps text-outline uppercase tracking-widest text-[10px]">Kind</th>
+<th class="px-6 py-4 font-label-caps text-outline uppercase tracking-widest text-[10px]">Module / Path</th>
+<th class="px-6 py-4 font-label-caps text-outline uppercase tracking-widest text-[10px]">Source Path</th>
+<th class="px-6 py-4 font-label-caps text-outline uppercase tracking-widest text-[10px] text-center">Status</th>
+<th class="px-6 py-4 font-label-caps text-outline uppercase tracking-widest text-[10px] text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/30">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-secondary-container text-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</div>
+<span class="font-bold text-primary">demo_search</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container text-[11px] font-bold">WEB_UI</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1 font-code-snippet text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span>/v1/search/worker</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-body-sm text-outline font-code-snippet truncate max-w-[200px] block">git://donezo/src/search_v1.git</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary">
+<div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+<span class="text-[11px] font-bold">Active</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold hover:opacity-90 transition-all opacity-0 group-hover:opacity-100 shadow-sm active:scale-95">Submit Task</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">login</span>
+</div>
+<span class="font-bold text-primary">login_collect</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[11px] font-bold">DESKTOP_CLIENT</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1 font-code-snippet text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span>/auth/identity/v2</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-body-sm text-outline font-code-snippet truncate max-w-[200px] block">C:\Donezo\Core\AuthModule</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-outline-variant/30 text-on-surface-variant">
+<div class="w-1.5 h-1.5 bg-outline rounded-full"></div>
+<span class="text-[11px] font-bold">Standby</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold hover:opacity-90 transition-all opacity-0 group-hover:opacity-100 shadow-sm active:scale-95">Submit Task</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-fixed text-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">database</span>
+</div>
+<span class="font-bold text-primary">data_sync_engine</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container text-[11px] font-bold">SERVICE</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1 font-code-snippet text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span>/internal/sync/master</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-body-sm text-outline font-code-snippet truncate max-w-[200px] block">git://donezo/lib/sync_core.git</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary">
+<div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+<span class="text-[11px] font-bold">Active</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold hover:opacity-90 transition-all opacity-0 group-hover:opacity-100 shadow-sm active:scale-95">Submit Task</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-error-container text-error rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<span class="font-bold text-primary">legacy_payment</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[11px] font-bold">LEGACY_WEB</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1 font-code-snippet text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span>/old/payments/checkout</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-body-sm text-outline font-code-snippet truncate max-w-[200px] block">/mnt/legacy/payments_old/</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-error/10 text-error">
+<div class="w-1.5 h-1.5 bg-error rounded-full"></div>
+<span class="text-[11px] font-bold">Error State</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-surface-container text-on-surface-variant px-4 py-1.5 rounded-lg text-[12px] font-bold cursor-not-allowed transition-all opacity-0 group-hover:opacity-100">Action Restricted</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-secondary-fixed text-on-secondary-fixed rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">inventory_2</span>
+</div>
+<span class="font-bold text-primary">inventory_manager</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container text-[11px] font-bold">DESKTOP_CLIENT</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1 font-code-snippet text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span>/erp/inventory/v4</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-body-sm text-outline font-code-snippet truncate max-w-[200px] block">git://donezo/apps/inventory.git</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary">
+<div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+<span class="text-[11px] font-bold">Active</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold hover:opacity-90 transition-all opacity-0 group-hover:opacity-100 shadow-sm active:scale-95">Submit Task</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Info -->
+<div class="px-6 py-4 bg-surface-container-low/30 border-t border-surface-variant/30 flex items-center justify-between">
+<p class="text-[12px] text-on-surface-variant font-medium">Showing <span class="text-primary font-bold">1 - 5</span> of 42 results</p>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-variant text-outline hover:bg-white transition-colors cursor-not-allowed">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-[12px] font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-variant text-outline hover:bg-white transition-colors text-[12px] font-bold">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-variant text-outline hover:bg-white transition-colors text-[12px] font-bold">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-variant text-outline hover:bg-white transition-colors text-[12px] font-bold">9</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-variant text-outline hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Summary / Stats Bento -->
+<div class="bento-grid">
+<div class="col-span-12 md:col-span-8 bg-white p-6 rounded-2xl shadow-[0px_4px_20px_rgba(27,67,50,0.05)] border border-surface-variant/30 flex items-center justify-between overflow-hidden relative">
+<div class="relative z-10">
+<h3 class="font-title-sm text-primary mb-1">Infrastructure Load</h3>
+<p class="text-on-surface-variant text-[13px] mb-4">Real-time health monitoring of business modules.</p>
+<div class="flex items-end gap-1.5 h-16">
+<div class="w-3 bg-secondary-fixed rounded-t-sm h-[40%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[65%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[55%]"></div>
+<div class="w-3 bg-secondary-fixed rounded-t-sm h-[30%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[85%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[70%]"></div>
+<div class="w-3 bg-secondary-fixed rounded-t-sm h-[45%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[95%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[60%]"></div>
+<div class="w-3 bg-secondary-fixed rounded-t-sm h-[20%]"></div>
+<div class="w-3 bg-primary rounded-t-sm h-[75%]"></div>
+</div>
+</div>
+<div class="text-right relative z-10">
+<p class="text-[32px] font-bold text-primary">94.2%</p>
+<p class="text-[12px] font-bold text-primary flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                +2.4% Optimal
+                            </p>
+</div>
+<!-- Abstract bg pattern -->
+<div class="absolute right-0 top-0 w-1/3 h-full opacity-[0.03] pointer-events-none">
+<svg height="100%" preserveaspectratio="none" viewbox="0 0 100 100" width="100%">
+<path d="M0,100 C20,80 40,90 60,70 S80,30 100,50 L100,100 Z" fill="#012d1d"></path>
+</svg>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-primary-container p-6 rounded-2xl shadow-lg relative group overflow-hidden">
+<div class="relative z-10 h-full flex flex-col justify-between">
+<div>
+<h3 class="text-primary-fixed font-title-sm">Quick Diagnostics</h3>
+<p class="text-on-primary-container text-[12px]">Scan all active modules for runtime inconsistencies.</p>
+</div>
+<button class="bg-primary-fixed text-primary px-6 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all mt-6 active:scale-95">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+                                Start Global Scan
+                            </button>
+</div>
+<div class="absolute -bottom-6 -right-6 opacity-10 group-hover:rotate-12 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px] text-white">troubleshoot</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Page Padding Bottom -->
+<div class="h-10"></div>
+</main>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Tab switching logic for filter bar
+        const filterButtons = document.querySelectorAll('.bg-surface-container-low button');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterButtons.forEach(b => {
+                    b.classList.remove('active-pill');
+                    b.classList.add('text-on-surface-variant');
+                });
+                btn.classList.add('active-pill');
+                btn.classList.remove('text-on-surface-variant');
+            });
+        });
+
+        // Search highlight mock
+        const searchInput = document.querySelector('input[placeholder*="Search task"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+    </script>
+</body></html>

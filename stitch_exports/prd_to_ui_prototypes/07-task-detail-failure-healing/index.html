@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Donezo - Task Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Hanken+Grotesk:wght@600;700&amp;family=JetBrains+Mono:wght@400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#092012",
+                        "on-secondary-fixed-variant": "#354c3b",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#cee9d3",
+                        "surface-dim": "#d9dadb",
+                        "primary": "#012d1d",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#86af99",
+                        "secondary-fixed-dim": "#b3cdb7",
+                        "on-tertiary-container": "#75b393",
+                        "on-background": "#191c1d",
+                        "primary-fixed": "#c1ecd4",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#002d1c",
+                        "on-tertiary-fixed": "#002114",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "surface": "#f8f9fa",
+                        "inverse-primary": "#a5d0b9",
+                        "primary-container": "#1b4332",
+                        "secondary-container": "#cce6d0",
+                        "primary-fixed-dim": "#a5d0b9",
+                        "tertiary-fixed": "#b1f0ce",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline": "#717973",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3f6653",
+                        "on-secondary-container": "#506856",
+                        "on-primary-fixed-variant": "#274e3d",
+                        "on-primary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00452e",
+                        "outline-variant": "#c1c8c2",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-surface-variant": "#414844",
+                        "on-tertiary-fixed-variant": "#0e5138",
+                        "secondary": "#4c6452",
+                        "tertiary-fixed-dim": "#95d4b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-gap": "20px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px",
+                        "container-padding": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "code-snippet": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-snippet": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #D8F3DC; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .pulse-healing { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .shadow-soft { shadow: 0px 4px 20px rgba(27, 67, 50, 0.05); }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="w-[260px] h-screen sticky top-0 left-0 bg-surface-container-lowest shadow-sm flex flex-col py-6">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary leading-tight">Donezo</h1>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Automation Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<p class="px-4 text-label-caps text-on-surface-variant mb-2">MENU</p>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<a class="text-primary font-bold border-l-4 border-primary bg-surface-container-high px-4 py-3 flex items-center gap-3 rounded-r-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="font-body-md">Batch Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">business_center</span>
+<span class="font-body-md">Business</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">add_task</span>
+<span class="font-body-md">New Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">search_check</span>
+<span class="font-body-md">Task Query</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-body-md">Runtime Env</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">api</span>
+<span class="font-body-md">API Debug</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md">Help</span>
+</a>
+<a class="text-error px-4 py-3 flex items-center gap-3 transition-colors rounded-xl hover:bg-error-container" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md">Logout</span>
+</a>
+</div>
+<!-- Promotion Card -->
+<div class="mx-4 mt-6 p-4 rounded-xl bg-primary-container text-white relative overflow-hidden">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary-fixed mb-2" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+<p class="font-title-sm text-sm mb-1 leading-tight">Download our Mobile App</p>
+<p class="text-[10px] text-primary-fixed opacity-80 mb-3">Manage tasks on the go with our companion app.</p>
+<button class="w-full bg-primary text-white py-2 rounded-lg text-xs font-bold hover:bg-black transition-colors">Download</button>
+</div>
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-primary rounded-full blur-2xl opacity-50"></div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-8 overflow-y-auto">
+<!-- TopAppBar -->
+<div class="flex justify-between items-center mb-8 bg-surface-container-low/50 backdrop-blur-md rounded-2xl p-4 shadow-sm">
+<div class="flex items-center gap-4 bg-white px-4 py-2 rounded-full border border-outline-variant/30 w-96 shadow-inner">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none" placeholder="Search task, errors, or sessions..." type="text"/>
+<kbd class="text-[10px] bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant">⌘F</kbd>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button class="p-2.5 rounded-full hover:bg-white transition-all text-on-surface-variant relative">
+<span class="material-symbols-outlined">mail</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="p-2.5 rounded-full hover:bg-white transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant/50"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-sm font-bold leading-none">Totok Michael</p>
+<p class="text-[11px] text-on-surface-variant">Admin Console</p>
+</div>
+<img class="w-10 h-10 rounded-full border-2 border-primary-fixed shadow-sm object-cover" data-alt="A professional close-up studio portrait of a modern tech professional with a friendly smile, clean-shaven, wearing a minimalist black turtleneck. The lighting is soft and corporate-style with a slight minty-green backlight that matches a lush forest aesthetic, and a blurred high-tech workspace background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFYpC-G8cKucbcaO6AyCtfPiJ6GkI8h1Qn8KIdLTrfRseWTPZ0TtgOFl0XmNcZsIJ1z7wMFSSe8ZuhIMoOpLedStbM2FvswWD4OHN50Zzw3mw4EY1cCcQnvUOR12kKI-3Jg1AbNhbSt5nDKPS4a96l3ss3RKSGPnZAEFPwkVY1h2_DuLwWI7BAWw4nATeetN60RyF8oS-9HWbKc2-hvKzs5N4_Nj2OaDO0GftdUL42ElbzeHP3QQm-GA"/>
+</div>
+</div>
+</div>
+<!-- Page Header with Status -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<a class="text-on-surface-variant hover:text-primary flex items-center" href="#">
+<span class="material-symbols-outlined text-lg">arrow_back</span>
+</a>
+<h2 class="font-headline-md text-headline-md text-primary">Process: Gateway-API-Sync</h2>
+</div>
+<p class="text-on-surface-variant font-body-md">Task ID: <span class="font-code-snippet text-xs px-2 py-0.5 bg-white rounded border border-outline-variant">TX-4091-B</span> • Session duration: 4m 12s</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 bg-white border border-outline-variant text-primary font-bold rounded-xl hover:bg-surface-container-low transition-all active:scale-[0.98]">
+                        Download Logs
+                    </button>
+<button class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-black transition-all shadow-md active:scale-[0.98] flex items-center gap-2" onclick="document.getElementById('retryModal').classList.remove('hidden')">
+<span class="material-symbols-outlined text-sm">refresh</span>
+                        Retry Task
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Content -->
+<div class="grid grid-cols-12 gap-card-gap">
+<!-- Status & Healing Info -->
+<div class="col-span-12 lg:col-span-4 space-y-card-gap">
+<!-- Status Card -->
+<div class="bg-white p-6 rounded-xl shadow-sm border-l-[6px] border-error">
+<div class="flex justify-between items-start mb-4">
+<span class="text-label-caps text-error">CURRENT STATUS</span>
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<h3 class="text-display-lg font-display-lg text-error mb-1">Failed</h3>
+<p class="text-on-surface-variant text-sm">Deployment timeout after 3 retries. Environment stability check triggered.</p>
+</div>
+<!-- Healing Status -->
+<div class="bg-primary-container p-6 rounded-xl shadow-sm text-white relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<div class="w-8 h-8 rounded-full bg-primary/40 flex items-center justify-center pulse-healing">
+<span class="material-symbols-outlined text-primary-fixed" style="font-variation-settings: 'FILL' 1;">auto_fix_high</span>
+</div>
+<span class="text-label-caps tracking-[0.1em] text-primary-fixed">HEALING ENGINE</span>
+</div>
+<div class="mb-6">
+<div class="flex justify-between text-xs mb-1.5 font-bold">
+<span>Healed Status</span>
+<span class="text-primary-fixed">True (Active)</span>
+</div>
+<div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+<div class="bg-primary-fixed h-full w-[85%] rounded-full shadow-[0_0_8px_rgba(193,236,212,0.5)]"></div>
+</div>
+</div>
+<p class="text-xs opacity-80 leading-relaxed italic">"System detected memory leak in container group. Scaling down and clearing cache automatically."</p>
+</div>
+
+</div>
+<!-- Timeline -->
+<div class="bg-white p-6 rounded-xl shadow-sm">
+<h3 class="text-label-caps text-on-surface-variant mb-6 uppercase tracking-widest">Execution Timeline</h3>
+<div class="space-y-6 relative">
+<div class="absolute left-[11px] top-2 bottom-2 w-0.5 bg-surface-container"></div>
+<div class="flex gap-4 relative z-10">
+<div class="w-6 h-6 rounded-full bg-secondary-fixed flex items-center justify-center border-4 border-white shadow-sm">
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+</div>
+<div>
+<p class="text-xs font-bold text-primary">Created</p>
+<p class="text-[10px] text-on-surface-variant">Oct 24, 2024 • 14:02:10</p>
+</div>
+</div>
+<div class="flex gap-4 relative z-10">
+<div class="w-6 h-6 rounded-full bg-secondary-fixed flex items-center justify-center border-4 border-white shadow-sm">
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+</div>
+<div>
+<p class="text-xs font-bold text-primary">Started</p>
+<p class="text-[10px] text-on-surface-variant">Oct 24, 2024 • 14:02:12</p>
+</div>
+</div>
+<div class="flex gap-4 relative z-10">
+<div class="w-6 h-6 rounded-full bg-error-container flex items-center justify-center border-4 border-white shadow-sm">
+<div class="w-2 h-2 bg-error rounded-full"></div>
+</div>
+<div>
+<p class="text-xs font-bold text-error">Finished (Failed)</p>
+<p class="text-[10px] text-on-surface-variant">Oct 24, 2024 • 14:06:24</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Error Evidence Section -->
+<div class="col-span-12 lg:col-span-8 space-y-card-gap">
+<!-- Traceback Editor -->
+<div class="bg-primary-container rounded-xl shadow-lg overflow-hidden border border-primary">
+<div class="px-6 py-4 bg-primary/80 flex justify-between items-center border-b border-white/5">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-error"></span>
+<span class="w-3 h-3 rounded-full bg-secondary-fixed"></span>
+<span class="w-3 h-3 rounded-full bg-on-tertiary-container"></span>
+<span class="ml-4 text-xs font-code-snippet text-primary-fixed uppercase tracking-widest opacity-80">error_traceback.log</span>
+</div>
+<button class="text-white/60 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-lg">content_copy</span>
+</button>
+</div>
+<div class="p-6 font-code-snippet text-code-snippet text-primary-fixed/90 overflow-x-auto leading-relaxed h-[320px]">
+<pre><code><span class="text-error">ERROR: Failed to connect to downstream service 'inventory-api'.</span>
+[2024-10-24 14:06:24] Traceback (most recent call last):
+  File "gateway/sync_service.py", line 142, in process_batch
+    response = requests.post(TARGET_URL, json=data, timeout=5)
+  File "requests/api.py", line 119, in post
+  File "requests/sessions.py", line 590, in request
+    resp = self.send(prep, **send_kwargs)
+<span class="text-tertiary-fixed font-bold">ConnectTimeout: HTTPSConnectionPool(host='api.internal.svc', port=443): Max retries exceeded</span>
+<span class="text-on-primary-container italic">// HEALING ENGINE NOTE: Auto-diagnostics suggests checking cluster DNS health.</span></code></pre>
+</div>
+</div>
+<!-- Screenshot & Source -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-card-gap">
+<!-- Screenshot -->
+<div class="bg-white p-4 rounded-xl shadow-sm space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-label-caps text-on-surface-variant">SNAPSHOT AT FAILURE</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg">photo_camera</span>
+</div>
+<div class="rounded-lg overflow-hidden border border-outline-variant/30 h-48 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A cinematic, high-contrast screenshot of a complex server infrastructure visualization. Multiple glowing green and red nodes are interconnected by thin digital threads in a dark, tech-oriented environment. The style is minimalist and tactile, with a soft focus on the peripheral nodes to emphasize a central 'failed' red node pulsating softly in a sea of forest green." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbbkQoyVvPz3u_lubgpqLdAt1X1FSRcIp1jtr8vxuOstIiEHZIndCokDmLHgPAqlgcT4GnYETSpU5MpcxvWEB1XlduKdTTj4g6VYtsSTYbhPRQWq5Xt9-4WZ0ph3LZHfrkaPbUSIAlnEUVXqM6hf3mZQLoGURWHwnQZyWf8i9ipcMUFF9TGZo-EXqBvLhBb398rZaLKCCV2wwwCUAvV2NTc8bZNcHO5Uwm9vu4CDnhLmf3Nlxo04UpOQ"/>
+</div>
+</div>
+<!-- Business Source -->
+<div class="bg-white p-6 rounded-xl shadow-sm">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">hub</span>
+<h3 class="text-title-sm">Business Source</h3>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+<span class="text-xs text-on-surface-variant">Department</span>
+<span class="text-xs font-bold text-primary">Logistics &amp; Supply</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+<span class="text-xs text-on-surface-variant">Integration</span>
+<span class="text-xs font-bold text-primary">SAP Gateway</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+<span class="text-xs text-on-surface-variant">Owner</span>
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold">AD</div>
+<span class="text-xs font-bold text-primary">Alex Deff</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Retry Confirmation Modal -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" id="retryModal">
+<div class="absolute inset-0 bg-primary/60 backdrop-blur-sm" onclick="document.getElementById('retryModal').classList.add('hidden')"></div>
+<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-primary-fixed/20">
+<div class="p-8 text-center">
+<div class="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">autorenew</span>
+</div>
+<h3 class="text-display-md text-headline-md font-headline-md text-primary mb-3">Confirm Retry</h3>
+<p class="text-on-surface-variant font-body-md mb-8">This will re-execute the task using the current environment configuration. The healing engine will remain active during the process.</p>
+<div class="flex flex-col gap-3">
+<button class="w-full py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-black transition-all shadow-md active:scale-[0.98]" onclick="document.getElementById('retryModal').classList.add('hidden')">
+                        Confirm Re-execution
+                    </button>
+<button class="w-full py-3.5 bg-white text-on-surface-variant font-bold rounded-xl hover:bg-surface-container-low transition-all" onclick="document.getElementById('retryModal').classList.add('hidden')">
+                        Cancel
+                    </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        // Micro-interaction for the side navigation
+        document.querySelectorAll('aside nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // In a real app we'd navigate, here we just show an active state
+                document.querySelectorAll('aside nav a').forEach(l => {
+                    l.classList.remove('text-primary', 'font-bold', 'border-l-4', 'border-primary', 'bg-surface-container-high', 'rounded-r-xl');
+                    l.classList.add('text-on-surface-variant', 'rounded-xl');
+                });
+                this.classList.remove('text-on-surface-variant', 'rounded-xl');
+                this.classList.add('text-primary', 'font-bold', 'border-l-4', 'border-primary', 'bg-surface-container-high', 'rounded-r-xl');
+            });
+        });
+
+        // Simple animation on load
+        window.addEventListener('load', () => {
+            document.querySelector('main').style.opacity = '0';
+            document.querySelector('main').style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                document.querySelector('main').style.transition = 'all 0.6s ease-out';
+                document.querySelector('main').style.opacity = '1';
+                document.querySelector('main').style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body></html>

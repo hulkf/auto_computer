@@ -1,0 +1,148 @@
+{
+  "projectId": "12846152526823068217",
+  "projectTitle": "PRD to UI Prototypes",
+  "source": "Stitch MCP",
+  "screens": [
+    {
+      "index": "01",
+      "title": "Task Detail - ??????",
+      "screenId": "10accd8a25264feaa62b858a0ec5242d",
+      "folder": "01-task-detail-success",
+      "width": "2560",
+      "height": "2812",
+      "deviceType": "DESKTOP",
+      "files": [
+        "01-task-detail-success/screenshot.png",
+        "01-task-detail-success/index.html"
+      ]
+    },
+    {
+      "index": "02",
+      "title": "Runtime Env - ????",
+      "screenId": "5ceadf0c39a34ca58705dc9903beaa97",
+      "folder": "02-runtime-env",
+      "width": "2560",
+      "height": "2574",
+      "deviceType": "DESKTOP",
+      "files": [
+        "02-runtime-env/screenshot.png",
+        "02-runtime-env/index.html"
+      ]
+    },
+    {
+      "index": "03",
+      "title": "Task Query - ????",
+      "screenId": "cf18e263d31b4999aab7befa77a20c94",
+      "folder": "03-task-query",
+      "width": "2560",
+      "height": "2494",
+      "deviceType": "DESKTOP",
+      "files": [
+        "03-task-query/screenshot.png",
+        "03-task-query/index.html"
+      ]
+    },
+    {
+      "index": "04",
+      "title": "API Debug - ????",
+      "screenId": "c29ca5bb14794c08b38091eceac6a50b",
+      "folder": "04-api-debug",
+      "width": "2560",
+      "height": "2524",
+      "deviceType": "DESKTOP",
+      "files": [
+        "04-api-debug/screenshot.png",
+        "04-api-debug/index.html"
+      ]
+    },
+    {
+      "index": "05",
+      "title": "New Task - ????",
+      "screenId": "c60a1d621dc941bd8050e1516ab4daed",
+      "folder": "05-new-task",
+      "width": "2560",
+      "height": "2330",
+      "deviceType": "DESKTOP",
+      "files": [
+        "05-new-task/screenshot.png",
+        "05-new-task/index.html"
+      ]
+    },
+    {
+      "index": "06",
+      "title": "Batch Task - ????",
+      "screenId": "0e72e5219f694f9f89f274ff065cc4e0",
+      "folder": "06-batch-task",
+      "width": "2560",
+      "height": "2454",
+      "deviceType": "DESKTOP",
+      "files": [
+        "06-batch-task/screenshot.png",
+        "06-batch-task/index.html"
+      ]
+    },
+    {
+      "index": "07",
+      "title": "Task Detail - ???????",
+      "screenId": "34eb4d6de49b4733b8edb04013a1ea8f",
+      "folder": "07-task-detail-failure-healing",
+      "width": "2560",
+      "height": "2048",
+      "deviceType": "DESKTOP",
+      "files": [
+        "07-task-detail-failure-healing/screenshot.png",
+        "07-task-detail-failure-healing/index.html"
+      ]
+    },
+    {
+      "index": "08",
+      "title": "Business Detail - ??????",
+      "screenId": "c64ae959b21c463f969466d0072a8361",
+      "folder": "08-business-detail-drawer",
+      "width": "2560",
+      "height": "2048",
+      "deviceType": "DESKTOP",
+      "files": [
+        "08-business-detail-drawer/screenshot.png",
+        "08-business-detail-drawer/index.html"
+      ]
+    },
+    {
+      "index": "09",
+      "title": "Business List - ????",
+      "screenId": "3586698f5f28449a8e4dff2e99ce8487",
+      "folder": "09-business-list",
+      "width": "2560",
+      "height": "2048",
+      "deviceType": "DESKTOP",
+      "files": [
+        "09-business-list/screenshot.png",
+        "09-business-list/index.html"
+      ]
+    },
+    {
+      "index": "10",
+      "title": "Dashboard - ???",
+      "screenId": "6fc0dcb0c0834ddda0104b8efb772995",
+      "folder": "10-dashboard",
+      "width": "2560",
+      "height": "2664",
+      "deviceType": "DESKTOP",
+      "files": [
+        "10-dashboard/screenshot.png",
+        "10-dashboard/index.html"
+      ]
+    }
+  ],
+  "designSystem": {
+    "title": "Design System",
+    "requestedId": "asset-stub-assets_903fac82d0084226a30c775877deb6dd",
+    "assetName": "assets/903fac82d0084226a30c775877deb6dd",
+    "folder": "11-design-system",
+    "files": [
+      "STYLE_GUIDELINES.md",
+      "design-system.json",
+      "theme.json"
+    ]
+  }
+}

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Donezo Automation Console - Business Details</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Hanken+Grotesk:wght@600;700;800&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#092012",
+                        "on-secondary-fixed-variant": "#354c3b",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#cee9d3",
+                        "surface-dim": "#d9dadb",
+                        "primary": "#012d1d",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#86af99",
+                        "secondary-fixed-dim": "#b3cdb7",
+                        "on-tertiary-container": "#75b393",
+                        "on-background": "#191c1d",
+                        "primary-fixed": "#c1ecd4",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#002d1c",
+                        "on-tertiary-fixed": "#002114",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "surface": "#f8f9fa",
+                        "inverse-primary": "#a5d0b9",
+                        "primary-container": "#1b4332",
+                        "secondary-container": "#cce6d0",
+                        "primary-fixed-dim": "#a5d0b9",
+                        "tertiary-fixed": "#b1f0ce",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline": "#717973",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3f6653",
+                        "on-secondary-container": "#506856",
+                        "on-primary-fixed-variant": "#274e3d",
+                        "on-primary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00452e",
+                        "outline-variant": "#c1c8c2",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-surface-variant": "#414844",
+                        "on-tertiary-fixed-variant": "#0e5138",
+                        "secondary": "#4c6452",
+                        "tertiary-fixed-dim": "#95d4b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-gap": "20px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px",
+                        "container-padding": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "code-snippet": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-snippet": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .forest-scroll::-webkit-scrollbar { width: 6px; }
+        .forest-scroll::-webkit-scrollbar-track { background: transparent; }
+        .forest-scroll::-webkit-scrollbar-thumb { background: #b3cdb7; border-radius: 10px; }
+        .drawer-shadow { box-shadow: -10px 0 30px rgba(27, 67, 50, 0.08); }
+        .glow-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md overflow-x-hidden">
+<div class="flex min-h-screen">
+<!-- SideNavBar (from JSON) -->
+<aside class="w-[260px] h-screen sticky top-0 left-0 bg-surface-container-lowest shadow-sm flex flex-col py-6">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-fixed">automation</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Donezo</h1>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Automation Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<div class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</div>
+<div class="text-primary font-bold border-l-4 border-primary bg-surface-container-high px-4 py-3 flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined">business_center</span>
+<span class="font-body-md">Business</span>
+</div>
+<div class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">add_task</span>
+<span class="font-body-md">New Task</span>
+</div>
+<div class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md">Batch Task</span>
+</div>
+<div class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">search_check</span>
+<span class="font-body-md">Task Query</span>
+</div>
+<div class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-body-md">Runtime Env</span>
+</div>
+<div class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">api</span>
+<span class="font-body-md">API Debug</span>
+</div>
+</nav>
+<div class="px-4 mt-auto space-y-1 border-t border-surface-variant pt-6">
+<div class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">Settings</span>
+</div>
+<div class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md">Help</span>
+</div>
+<div class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container transition-all cursor-pointer rounded-lg text-error">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md">Logout</span>
+</div>
+</div>
+<!-- Promotion Card -->
+<div class="mx-4 mt-6 p-4 rounded-xl relative overflow-hidden bg-primary-container text-on-primary-fixed-variant">
+
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary-fixed mb-2">rocket_launch</span>
+<p class="font-title-sm text-sm text-white leading-tight mb-2">Download our Mobile App</p>
+<p class="text-[10px] text-primary-fixed-dim mb-3">Manage deployments on the go</p>
+<button class="w-full bg-primary text-white py-2 rounded-lg text-xs font-bold hover:bg-on-primary-container transition-colors">Download Now</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- TopAppBar (from JSON) -->
+<header class="h-20 w-full sticky top-0 z-40 bg-surface flex items-center px-gutter border-b border-surface-variant/30">
+<div class="flex justify-between items-center w-full max-w-[1180px] mx-auto">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">search</span>
+<input class="w-full bg-surface-container rounded-full pl-10 pr-4 py-2 text-sm border-none focus:ring-2 focus:ring-primary/20" placeholder="Search tasks or endpoints..." type="text"/>
+<kbd class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant bg-surface-container-high px-1.5 py-0.5 rounded">⌘F</kbd>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-all active:scale-95">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-all active:scale-95 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+<div class="h-8 w-px bg-surface-variant"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="font-title-sm text-sm text-on-surface">Totok Michael</p>
+<p class="text-[11px] text-on-surface-variant">Gateway: Online</p>
+</div>
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-primary-fixed" data-alt="A close-up high-quality portrait of a tech professional in a modern office, wearing a casual dark sweater, with soft focus on a bright, minimalist background. The style is professional and friendly, using the brand's lush green and white aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFU2dnsuCqKnJGSgXP8gLudEcG-fj-0SsEULzUGLiDMVjBJGEGRFjPKxQjLqY_YE2AhvlpWiQ9vWgeR7zUIq7dBCbKg2fVIsbaKQ6CQrNT-7VxikT-aMii5uXsNyMpAJlRQcS21oVG4UpN3OQYOSn0XkRGm6TXZpaBtniJGUklYQ9v1g40QW3l_qQoaNjkwQp_03I-vI4TBqDFwz_s_KmyTo4QrQ-_e9kYnbV04qXIAqLyj5xm9pB3GQ"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content (Business List) -->
+<div class="p-gutter max-w-[1180px] mx-auto w-full flex-1">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary">Business Units</h2>
+<p class="text-on-surface-variant mt-1">Manage and monitor automation logic segments.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 bg-secondary-container text-on-secondary-container rounded-xl font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-xl">file_download</span>
+                            Import Schema
+                        </button>
+<button class="px-6 py-2.5 bg-primary text-white rounded-xl font-bold flex items-center gap-2 hover:opacity-90 shadow-lg shadow-primary/10 transition-opacity">
+<span class="material-symbols-outlined text-xl">add</span>
+                            New Business
+                        </button>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant/50">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 font-label-caps text-label-caps text-on-surface-variant">BUSINESS NAME</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-on-surface-variant">STATUS</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-on-surface-variant">UPTIME</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-on-surface-variant">LAST UPDATED</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-on-surface-variant text-right">ACTION</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/30">
+<!-- Row 1: Active Selection -->
+<tr class="hover:bg-surface-container-low/50 transition-colors bg-secondary-container/10 group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-fixed">account_tree</span>
+</div>
+<div>
+<p class="font-bold text-primary">OrderSync_v4</p>
+<p class="text-xs text-on-surface-variant">com.donezo.sync.orders</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold flex items-center gap-1.5 w-fit">
+<span class="w-1.5 h-1.5 bg-primary rounded-full glow-pulse"></span>
+                                        Healthy
+                                    </span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface">99.98%</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">2 mins ago</td>
+<td class="px-6 py-5 text-right">
+<button class="text-primary font-bold text-sm hover:underline" onclick="toggleDrawer()">View Details</button>
+</td>
+</tr>
+<!-- More placeholder rows -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">inventory</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">StockManager_API</p>
+<p class="text-xs text-on-surface-variant">io.inventory.core</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold flex items-center gap-1.5 w-fit">
+<span class="w-1.5 h-1.5 bg-on-surface-variant rounded-full"></span>
+                                        Idle
+                                    </span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface">100.0%</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">14 hours ago</td>
+<td class="px-6 py-5 text-right">
+<button class="text-on-surface-variant font-bold text-sm hover:text-primary">View Details</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- Overlay Background -->
+<div class="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 hidden transition-opacity duration-300" id="drawer-overlay" onclick="toggleDrawer()"></div>
+<!-- Business Detail Drawer -->
+<div class="fixed top-0 right-0 h-screen w-full md:w-[600px] bg-white z-[60] translate-x-full transition-transform duration-500 ease-out drawer-shadow flex flex-col" id="business-drawer">
+<!-- Drawer Header -->
+<div class="p-6 border-b border-surface-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors" onclick="toggleDrawer()">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div>
+<h3 class="font-title-sm text-primary">OrderSync_v4</h3>
+<p class="text-xs text-on-surface-variant">Detailed Business Specification</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</div>
+<!-- Drawer Body -->
+<div class="flex-1 overflow-y-auto forest-scroll p-6 space-y-8">
+<!-- Usage Stats Section -->
+<section>
+<h4 class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-4">Runtime Metrics</h4>
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl border border-surface-variant/20">
+<p class="text-xs text-on-surface-variant mb-1">Execution Count</p>
+<p class="font-display-lg text-2xl text-primary">12.4k</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-primary font-bold">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+                                12%
+                            </div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-surface-variant/20">
+<p class="text-xs text-on-surface-variant mb-1">Avg Latency</p>
+<p class="font-display-lg text-2xl text-primary">24ms</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-primary font-bold">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>
+                                Optimized
+                            </div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-surface-variant/20">
+<p class="text-xs text-on-surface-variant mb-1">Error Rate</p>
+<p class="font-display-lg text-2xl text-error">0.02%</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-error font-bold">
+<span class="material-symbols-outlined text-[12px]">trending_down</span>
+                                4%
+                            </div>
+</div>
+</div>
+</section>
+<!-- Parameter Schema Section -->
+<section>
+<div class="flex justify-between items-center mb-4">
+<h4 class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Parameter Schema</h4>
+<span class="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">JSON Strict</span>
+</div>
+<div class="bg-white border border-surface-variant rounded-xl overflow-hidden">
+<div class="grid grid-cols-4 bg-surface-container-low px-4 py-2 border-b border-surface-variant text-[11px] font-bold text-on-surface-variant">
+<div class="col-span-1">KEY</div>
+<div class="col-span-1">TYPE</div>
+<div class="col-span-2">DESCRIPTION</div>
+</div>
+<div class="divide-y divide-surface-variant/30">
+<div class="grid grid-cols-4 px-4 py-3 text-xs">
+<div class="font-code-snippet text-primary font-bold">order_id</div>
+<div class="text-on-surface-variant italic">String (UUID)</div>
+<div class="col-span-2 text-on-surface">Unique identifier for the incoming order packet.</div>
+</div>
+<div class="grid grid-cols-4 px-4 py-3 text-xs">
+<div class="font-code-snippet text-primary font-bold">retry_limit</div>
+<div class="text-on-surface-variant italic">Integer</div>
+<div class="col-span-2 text-on-surface">Maximum attempts for webhook delivery.</div>
+</div>
+<div class="grid grid-cols-4 px-4 py-3 text-xs">
+<div class="font-code-snippet text-primary font-bold">priority</div>
+<div class="text-on-surface-variant italic">Enum [0..2]</div>
+<div class="col-span-2 text-on-surface">0: Normal, 1: High, 2: Critical system path.</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Source Code Preview Section -->
+<section>
+<div class="flex justify-between items-center mb-4">
+<h4 class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Implementation Logic</h4>
+<button class="flex items-center gap-1 text-[11px] text-primary font-bold hover:underline">
+<span class="material-symbols-outlined text-sm">content_copy</span>
+                            Copy Hook
+                        </button>
+</div>
+<div class="rounded-xl overflow-hidden bg-primary-container p-4 shadow-inner">
+<pre class="font-code-snippet text-xs text-primary-fixed leading-relaxed"><span class="text-on-tertiary-container">// Automated Order Synchronization Handler</span>
+<span class="text-secondary-fixed">async function</span> <span class="text-tertiary-fixed">handleOrderSync</span>(data) {
+  <span class="text-secondary-fixed">const</span> { order_id, priority } = data;
+  
+  <span class="text-secondary-fixed">try</span> {
+    <span class="text-on-tertiary-container">// Authenticate gateway transition</span>
+    <span class="text-secondary-fixed">await</span> Gateway.validate(order_id);
+    
+    <span class="text-secondary-fixed">if</span> (priority &gt; 1) {
+      <span class="text-on-tertiary-container">// Push to high-velocity queue</span>
+      <span class="text-secondary-fixed">return await</span> Queue.pushImmediate(data);
+    }
+    
+    <span class="text-secondary-fixed">return await</span> Queue.standard(data);
+  } <span class="text-secondary-fixed">catch</span> (err) {
+    <span class="text-error-container">Logger.critical</span>(<span class="text-white">`Sync failed: ${order_id}`</span>, err);
+    <span class="text-secondary-fixed">throw</span> err;
+  }
+}</pre>
+</div>
+</section>
+</div>
+<!-- Drawer Footer -->
+<div class="p-6 border-t border-surface-variant/30 bg-surface-container-lowest">
+<div class="flex gap-4">
+<button class="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Deploy Changes</button>
+<button class="px-6 py-3 border border-surface-variant text-on-surface font-bold rounded-xl hover:bg-surface-container transition-colors">Test Script</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        function toggleDrawer() {
+            const drawer = document.getElementById('business-drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            
+            if (drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                drawer.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Initialize state
+        window.addEventListener('load', () => {
+            // Pre-reveal for dramatic effect in demo
+            setTimeout(toggleDrawer, 800);
+        });
+    </script>
+</body></html>

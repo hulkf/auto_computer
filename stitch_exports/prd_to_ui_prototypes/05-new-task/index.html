@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Donezo - New Task Configuration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Hanken+Grotesk:wght@600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#092012",
+                        "on-secondary-fixed-variant": "#354c3b",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#cee9d3",
+                        "surface-dim": "#d9dadb",
+                        "primary": "#012d1d",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#86af99",
+                        "secondary-fixed-dim": "#b3cdb7",
+                        "on-tertiary-container": "#75b393",
+                        "on-background": "#191c1d",
+                        "primary-fixed": "#c1ecd4",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#002d1c",
+                        "on-tertiary-fixed": "#002114",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "surface": "#f8f9fa",
+                        "inverse-primary": "#a5d0b9",
+                        "primary-container": "#1b4332",
+                        "secondary-container": "#cce6d0",
+                        "primary-fixed-dim": "#a5d0b9",
+                        "tertiary-fixed": "#b1f0ce",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline": "#717973",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3f6653",
+                        "on-secondary-container": "#506856",
+                        "on-primary-fixed-variant": "#274e3d",
+                        "on-primary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00452e",
+                        "outline-variant": "#c1c8c2",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-surface-variant": "#414844",
+                        "on-tertiary-fixed-variant": "#0e5138",
+                        "secondary": "#4c6452",
+                        "tertiary-fixed-dim": "#95d4b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-gap": "20px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px",
+                        "container-padding": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "code-snippet": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-snippet": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .sidebar-active {
+            border-left: 4px solid #012d1d;
+            background-color: #e7e8e9;
+            font-weight: 700;
+            color: #012d1d;
+        }
+        .json-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .json-scroll::-webkit-scrollbar-thumb {
+            background: #3f6653;
+            border-radius: 10px;
+        }
+        .custom-shadow {
+            box-shadow: 0px 4px 20px rgba(27, 67, 50, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-[#D8F3DC] text-on-surface min-h-screen flex font-body-md">
+<!-- Sidebar Navigation -->
+<aside class="w-[260px] h-screen sticky top-0 left-0 bg-surface-container-lowest flex flex-col py-6 shadow-sm z-50">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[20px]">automation</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary leading-none">Donezo</h1>
+<p class="text-[10px] text-on-surface-variant tracking-wider uppercase">Automation Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<p class="px-6 text-[10px] font-bold text-on-surface-variant uppercase mb-2">Menu</p>
+<a class="text-on-surface-variant hover:text-primary px-6 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-6 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">business_center</span>
+<span class="font-body-md">Business</span>
+</a>
+<a class="sidebar-active px-6 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_task</span>
+<span class="font-body-md">New Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-6 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md">Batch Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-6 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">search_check</span>
+<span class="font-body-md">Task Query</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-6 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-body-md">Runtime Env</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-6 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container" href="#">
+<span class="material-symbols-outlined">api</span>
+<span class="font-body-md">API Debug</span>
+</a>
+</nav>
+<div class="px-4 mt-auto mb-6">
+<div class="bg-primary-container rounded-xl p-4 text-white relative overflow-hidden group">
+
+<div class="relative z-10">
+<p class="font-bold text-sm mb-1">Download Mobile App</p>
+<p class="text-[10px] text-on-primary-container mb-3">Manage tasks on the go</p>
+<button class="bg-white/10 hover:bg-white/20 transition-all text-white text-[11px] font-bold py-2 px-4 rounded-lg w-full">Download</button>
+</div>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-4">
+<a class="text-on-surface-variant hover:text-primary px-6 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-6 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md">Help</span>
+</a>
+<a class="text-error px-6 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col max-w-[1180px] mx-auto w-full px-gutter">
+<!-- Top App Bar -->
+<header class="h-20 w-full flex justify-between items-center bg-transparent z-40">
+<div class="flex items-center gap-4 bg-surface-container-lowest rounded-full px-4 py-2 custom-shadow flex-1 max-w-md">
+<span class="material-symbols-outlined text-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-surface-variant" placeholder="Search operations or tasks..." type="text"/>
+<div class="bg-surface-container text-[10px] px-2 py-1 rounded font-mono text-on-surface-variant">⌘F</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high transition-all flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high transition-all flex items-center justify-center text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+<div class="h-10 w-px bg-surface-variant mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="font-title-sm text-on-surface leading-tight">Totok Michael</p>
+<p class="text-body-sm text-on-surface-variant">tmichael20@mail.com</p>
+</div>
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-white ring-offset-2 ring-offset-surface-variant" data-alt="A professional studio headshot of a smiling young tech professional with short hair, wearing a clean olive green sweater against a neutral soft gray background. The lighting is bright and airy, reflecting a modern corporate clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpmpcnMx8z3Bnpj0M0MjjdF3NQDD3CV_5WmZxKnEbD-7ojK6gpEPO8tXUDXm9UMU86e0A3kbrNB5CKu43DTe0bZVPTZ09-w21KTCq9cCbKPJD6U-Eqn6Su4hBgkjOT4Azddyw9mzRU8DRF4--ZexjYYvrK4odYHr6AllI4WqF_Y-4kj0jsX2eyrFCxkio90zZD4moHLp_DDkCi0zOarntezJrpnmgJEaOQP-zzItrCHpnzM8Az34-cNw"/>
+</div>
+</div>
+</header>
+<!-- Page Header -->
+<div class="py-8 flex justify-between items-end">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary">New Task Configuration</h2>
+<p class="text-on-surface-variant mt-1">Configure automated execution parameters and business logic.</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-secondary-container text-on-secondary-container px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                    Draft
+                </button>
+<button class="bg-primary text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-95">
+<span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+                    Submit Task
+                </button>
+</div>
+</div>
+<!-- Layout Grid: Bento Style -->
+<div class="grid grid-cols-12 gap-card-gap pb-12">
+<!-- Left Column: Settings & Logic -->
+<div class="col-span-12 lg:col-span-8 space-y-card-gap">
+<!-- Business Selection (Stepper Style Header) -->
+<section class="bg-surface-container-lowest rounded-xl p-container-padding custom-shadow">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-title-sm flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center text-xs font-bold">01</span>
+                            Business Selection
+                        </h3>
+<span class="bg-secondary-container/30 text-on-secondary-container text-[11px] px-3 py-1 rounded-full font-bold uppercase tracking-wider">Step 1 of 3</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="border-2 border-primary bg-primary/5 p-4 rounded-xl cursor-pointer relative group">
+<div class="absolute top-3 right-3 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="material-symbols-outlined text-primary mb-3 text-3xl">language</span>
+<h4 class="font-bold text-primary">Web Automation</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Browser-based crawler and healing tasks.</p>
+</div>
+<div class="border-2 border-surface-variant hover:border-secondary transition-all p-4 rounded-xl cursor-pointer group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary mb-3 text-3xl transition-colors">desktop_windows</span>
+<h4 class="font-bold text-on-surface">Desktop Apps</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Local OS interaction and legacy software.</p>
+</div>
+<div class="border-2 border-surface-variant hover:border-secondary transition-all p-4 rounded-xl cursor-pointer group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary mb-3 text-3xl transition-colors">hub</span>
+<h4 class="font-bold text-on-surface">Cloud Native</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Infrastructure as code and API triggers.</p>
+</div>
+</div>
+</section>
+<!-- Parameter Config (JSON Editor) -->
+<section class="bg-surface-container-lowest rounded-xl p-container-padding custom-shadow">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-title-sm flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center text-xs font-bold">02</span>
+                            Task Parameters (`params`)
+                        </h3>
+<div class="flex bg-surface-container p-1 rounded-lg">
+<button class="bg-white text-primary text-[11px] px-3 py-1 rounded shadow-sm font-bold">Visual</button>
+<button class="text-on-surface-variant text-[11px] px-3 py-1 font-bold">JSON</button>
+</div>
+</div>
+<div class="bg-[#1B4332] rounded-xl overflow-hidden">
+<div class="bg-primary/50 px-4 py-2 flex items-center justify-between border-b border-white/10">
+<span class="text-[10px] text-primary-fixed uppercase font-bold tracking-widest">Configuration Editor</span>
+<div class="flex gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-error/40"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-fixed/40"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-on-tertiary-container/40"></span>
+</div>
+</div>
+<div class="p-6 font-code-snippet text-white min-h-[300px] json-scroll overflow-auto">
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">1</span>
+<span>{</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">2</span>
+<span class="pl-4">"<span class="text-tertiary-fixed">target_url</span>": "<span class="text-secondary-fixed-dim">https://api.donezo.io/v1/health</span>",</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">3</span>
+<span class="pl-4">"<span class="text-tertiary-fixed">method</span>": "<span class="text-secondary-fixed-dim">POST</span>",</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">4</span>
+<span class="pl-4">"<span class="text-tertiary-fixed">headers</span>": {</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">5</span>
+<span class="pl-8">"<span class="text-tertiary-fixed">Content-Type</span>": "<span class="text-secondary-fixed-dim">application/json</span>",</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">6</span>
+<span class="pl-8">"<span class="text-tertiary-fixed">Authorization</span>": "<span class="text-secondary-fixed-dim">Bearer {{API_TOKEN}}</span>"</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">7</span>
+<span class="pl-4">},</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">8</span>
+<span class="pl-4">"<span class="text-tertiary-fixed">payload</span>": {</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">9</span>
+<span class="pl-8">"<span class="text-tertiary-fixed">cluster_id</span>": "<span class="text-secondary-fixed-dim">CL-9902</span>",</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">10</span>
+<span class="pl-8">"<span class="text-tertiary-fixed">auto_repair</span>": <span class="text-primary-fixed">true</span></span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">11</span>
+<span class="pl-4">}</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container opacity-30 select-none">12</span>
+<span>}</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-primary-container/60 text-xs italic">
+<span class="material-symbols-outlined text-xs">info</span>
+                                Syntax highlighted for production environment
+                            </div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Controls & Preview -->
+<div class="col-span-12 lg:col-span-4 space-y-card-gap">
+<!-- Execution Settings -->
+<section class="bg-surface-container-lowest rounded-xl p-container-padding custom-shadow">
+<div class="flex items-center gap-2 mb-6">
+<span class="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center text-xs font-bold">03</span>
+<h3 class="font-title-sm">Execution Settings</h3>
+</div>
+<div class="space-y-6">
+<div>
+<label class="block text-label-caps text-on-surface-variant mb-2">TIMEOUT (SECONDS)</label>
+<div class="flex items-center gap-4">
+<input class="flex-1 accent-primary" max="600" min="30" step="30" type="range" value="300"/>
+<span class="font-bold text-primary w-12 text-right">300s</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<label class="block text-label-caps text-on-surface-variant">MAX RETRIES</label>
+<p class="text-[10px] text-on-surface-variant">Attempt failure recovery</p>
+</div>
+<select class="bg-surface-container border-none rounded-lg text-sm font-bold focus:ring-primary py-1 px-3">
+<option>0</option>
+<option selected="">1</option>
+<option>2</option>
+<option>3</option>
+</select>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-surface-variant">
+<div>
+<label class="block font-bold text-on-surface">Enable Self-healing</label>
+<p class="text-body-sm text-on-surface-variant">AI-powered script correction</p>
+</div>
+<button class="w-12 h-6 bg-primary rounded-full relative p-1 transition-all">
+<div class="w-4 h-4 bg-white rounded-full ml-auto"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- Request Preview -->
+<section class="bg-white rounded-xl overflow-hidden custom-shadow">
+<div class="p-4 border-b border-surface-variant bg-surface-container-low flex items-center justify-between">
+<span class="text-label-caps text-on-surface">Live Request Preview</span>
+<span class="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse"></span>
+</div>
+<div class="p-6">
+<div class="space-y-4">
+<div class="bg-surface-container-low rounded-lg p-3">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Method</span>
+<p class="font-mono text-xs font-bold text-primary">POST</p>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Endpoint</span>
+<p class="font-mono text-xs text-on-surface break-all">api.donezo.io/v1/health</p>
+</div>
+<div class="relative">
+<div class="absolute -left-6 top-0 bottom-0 w-1 bg-secondary-fixed rounded-full"></div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase mb-2 block">Payload Signature</span>
+<div class="bg-surface-container-low p-3 rounded-lg text-[10px] font-mono text-on-surface-variant">
+                                    { "auth": "***", "op": "HEALING", "priority": 1 }
+                                </div>
+</div>
+</div>
+<div class="mt-8 flex items-center gap-3 p-4 bg-secondary-container/10 border border-secondary-fixed/30 rounded-xl">
+<span class="material-symbols-outlined text-secondary text-2xl">verified</span>
+<div>
+<p class="text-xs font-bold text-secondary">Config Validated</p>
+<p class="text-[10px] text-on-secondary-fixed-variant">Ready for deployment to cluster 04</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Help Context Card -->
+<div class="bg-primary p-6 rounded-xl relative overflow-hidden text-white">
+
+<div class="relative z-10">
+<span class="material-symbols-outlined mb-2">lightbulb</span>
+<h4 class="font-bold text-sm">Pro Tip</h4>
+<p class="text-xs text-primary-fixed-dim mt-1 leading-relaxed">Using "Self-healing" adds 1.2s to execution time but reduces manual intervention by 84%.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction for toggle
+        document.querySelectorAll('button.relative').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dot = btn.querySelector('div');
+                btn.classList.toggle('bg-primary');
+                btn.classList.toggle('bg-surface-variant');
+                dot.classList.toggle('ml-auto');
+            });
+        });
+
+        // Hover effect for steps
+        document.querySelectorAll('.border-2.cursor-pointer').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+    </script>
+</body></html>

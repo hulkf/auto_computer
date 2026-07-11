@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Donezo - Runtime Env</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Hanken+Grotesk:wght@600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#092012",
+                        "on-secondary-fixed-variant": "#354c3b",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#cee9d3",
+                        "surface-dim": "#d9dadb",
+                        "primary": "#012d1d",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#86af99",
+                        "secondary-fixed-dim": "#b3cdb7",
+                        "on-tertiary-container": "#75b393",
+                        "on-background": "#191c1d",
+                        "primary-fixed": "#c1ecd4",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#002d1c",
+                        "on-tertiary-fixed": "#002114",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "surface": "#f8f9fa",
+                        "inverse-primary": "#a5d0b9",
+                        "primary-container": "#1b4332",
+                        "secondary-container": "#cce6d0",
+                        "primary-fixed-dim": "#a5d0b9",
+                        "tertiary-fixed": "#b1f0ce",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline": "#717973",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3f6653",
+                        "on-secondary-container": "#506856",
+                        "on-primary-fixed-variant": "#274e3d",
+                        "on-primary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00452e",
+                        "outline-variant": "#c1c8c2",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-surface-variant": "#414844",
+                        "on-tertiary-fixed-variant": "#0e5138",
+                        "secondary": "#4c6452",
+                        "tertiary-fixed-dim": "#95d4b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-gap": "20px",
+                        "gutter": "16px",
+                        "sidebar-width": "260px",
+                        "container-padding": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "code-snippet": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-snippet": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #f8f9fa; color: #191c1d; overflow-x: hidden; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .card-shadow { shadow: 0px 4px 20px rgba(27, 67, 50, 0.05); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cee9d3; border-radius: 10px; }
+        .pulse-healing { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- Sidebar Section -->
+<aside class="w-[260px] h-screen sticky top-0 left-0 bg-surface-container-lowest flex flex-col py-6 shadow-sm z-50">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_mode</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary leading-none">Donezo</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Automation Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-2">
+<p class="px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Menu</p>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">business_center</span>
+<span class="font-body-md text-body-md">Business</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">add_task</span>
+<span class="font-body-md text-body-md">New Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md text-body-md">Batch Task</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">search_check</span>
+<span class="font-body-md text-body-md">Task Query</span>
+</a>
+<a class="text-primary font-bold border-l-4 border-primary bg-surface-container-high px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span class="font-body-md text-body-md">Runtime Env</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-3 flex items-center gap-3 transition-colors hover:bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined">api</span>
+<span class="font-body-md text-body-md">API Debug</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<div class="bg-primary-container rounded-xl p-4 relative overflow-hidden group">
+<div class="relative z-10">
+<h3 class="text-white font-bold text-sm mb-1">Download our Mobile App</h3>
+<p class="text-primary-fixed text-[10px] mb-3 opacity-80">Get easy in another way</p>
+<button class="bg-primary text-white text-[11px] font-bold px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all">Download</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+<span class="material-symbols-outlined text-[100px]" style="font-variation-settings: 'FILL' 1;">install_mobile</span>
+</div>
+</div>
+<div class="mt-6 space-y-1">
+<a class="text-on-surface-variant hover:text-primary px-4 py-2 flex items-center gap-3 transition-colors text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-2 flex items-center gap-3 transition-colors text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span>Help</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary px-4 py-2 flex items-center gap-3 transition-colors text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- Top App Bar -->
+<header class="h-20 w-full sticky top-0 z-40 bg-surface flex justify-center items-center px-gutter border-b border-surface-variant/30">
+<div class="flex justify-between items-center w-full max-w-[1180px] mx-auto">
+<div class="flex-1 max-w-md relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-12 pr-4 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search runtime logs, assets, or profiles..." type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant border border-outline-variant px-1.5 py-0.5 rounded">⌘ F</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2.5 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative">
+<span class="material-symbols-outlined">mail</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2.5 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-8 w-px bg-surface-variant mx-2"></div>
+<div class="flex items-center gap-3 pl-2 group cursor-pointer">
+<div class="text-right">
+<p class="font-title-sm text-sm text-primary leading-none">Totok Michael</p>
+<p class="text-body-sm text-[11px] text-on-surface-variant">tmichael20@mail.com</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-secondary-container overflow-hidden border-2 border-white shadow-sm transition-transform group-active:scale-95">
+<img class="w-full h-full object-cover" data-alt="A friendly, expressive 3D character headshot of a smiling young male professional with dark curly hair and glasses, wearing a smart casual outfit, rendered in a soft-shaded Pixar-inspired 3D style on a clean solid mint background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCilvmHX8uWeLSugSKLe9cyXRYuOhJKXgMOxaKwQzPar4zqtPhxx9Atwy46fQxn9pDI3JZbRo93NXn3uuf2ZEVtysuMkSJNsu4clv8BezU92HEClGNEshpBhiQCt2fc8aL7WR8ZmovgTSKSWIVUEGGELuIEq5jy7MlgOJJhjMyGzrLE35w6DndtWTaVx-01w4v7y7HJXkWGLaE4-R2yAA46VOsUtcPh8z614ERj0PF4zPdygMWXr3r-sA"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="flex-1 p-gutter w-full max-w-[1180px] mx-auto space-y-6 pb-12">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-4">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary">Runtime Environment</h2>
+<p class="text-on-surface-variant font-body-md">Monitor local self-healing clusters and manages automated resources.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 bg-secondary-container text-primary font-bold rounded-xl text-sm flex items-center gap-2 hover:brightness-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+                        Open Console
+                    </button>
+<button class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl text-sm flex items-center gap-2 hover:shadow-lg transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                        Restart Cluster
+                    </button>
+</div>
+</div>
+<!-- Top Grid: Health & Resources -->
+<div class="grid grid-cols-12 gap-card-gap">
+<!-- Main Health Monitor Card -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-surface-variant/20 flex flex-col">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-fixed/30 text-on-secondary-fixed-variant rounded-full text-[11px] font-bold uppercase tracking-wider mb-2">
+<span class="w-2 h-2 bg-[#2d6a4f] rounded-full pulse-healing"></span>
+                                Live Cluster: Node-01
+                            </span>
+<h3 class="text-2xl font-bold text-primary">System Health Status</h3>
+</div>
+<div class="flex items-center gap-1.5 px-4 py-2 bg-primary-container text-white rounded-lg">
+<span class="material-symbols-outlined text-[20px] pulse-healing">health_and_safety</span>
+<span class="font-bold text-sm">Optimal</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-6 flex-1">
+<div class="bg-surface-container p-4 rounded-xl relative overflow-hidden">
+<p class="text-on-surface-variant text-[11px] font-bold uppercase mb-1">CPU Load</p>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-bold text-primary">24%</span>
+<span class="text-green-600 text-xs font-bold mb-1 flex items-center">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> 5%
+                                </span>
+</div>
+<!-- Mini Sparkline visualization -->
+<div class="mt-4 h-12 flex items-end gap-1">
+<div class="w-full bg-primary/10 rounded-t-sm h-[40%]"></div>
+<div class="w-full bg-primary/10 rounded-t-sm h-[60%]"></div>
+<div class="w-full bg-primary/10 rounded-t-sm h-[35%]"></div>
+<div class="w-full bg-primary/20 rounded-t-sm h-[70%]"></div>
+<div class="w-full bg-primary h-[24%]"></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-xl">
+<p class="text-on-surface-variant text-[11px] font-bold uppercase mb-1">Memory (RAM)</p>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-bold text-primary">4.2<span class="text-lg">GB</span></span>
+<span class="text-on-surface-variant text-[10px] mb-1">of 16GB</span>
+</div>
+<div class="mt-4 w-full bg-outline-variant/30 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[26%]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2">Stability: <span class="text-primary font-bold">Excellent</span></p>
+</div>
+<div class="bg-surface-container p-4 rounded-xl">
+<p class="text-on-surface-variant text-[11px] font-bold uppercase mb-1">Uptime</p>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-bold text-primary">12<span class="text-lg">d</span> 04<span class="text-lg">h</span></span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="text-[11px] font-bold">No crashes detected</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Browser Profiles Card -->
+<div class="col-span-12 lg:col-span-4 bg-primary-container rounded-xl p-container-padding text-white relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-xl font-bold">Active Sessions</h3>
+<button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+<div class="w-10 h-10 rounded bg-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">captive_portal</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Market_Analysis_Bot</p>
+<p class="text-[10px] opacity-60">Chrome v114 • Profile 02</p>
+</div>
+<span class="w-2 h-2 bg-green-400 rounded-full"></span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+<div class="w-10 h-10 rounded bg-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">public</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Social_Sync_Worker</p>
+<p class="text-[10px] opacity-60">Edge v112 • Profile 05</p>
+</div>
+<span class="w-2 h-2 bg-green-400 rounded-full"></span>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-white/10">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[11px] font-bold uppercase tracking-widest opacity-60">Sandbox Usage</span>
+<span class="text-[11px] font-bold">64%</span>
+</div>
+<div class="w-full bg-white/10 h-1.5 rounded-full">
+<div class="bg-primary-fixed h-full w-[64%]"></div>
+</div>
+</div>
+</div>
+<!-- Background Decoration -->
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
+</div>
+</div>
+<!-- Middle Section: Bento Grid for Explanation & Assets -->
+<div class="grid grid-cols-12 gap-card-gap">
+<!-- System Capability Text Card -->
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-surface-variant/20">
+<div class="w-12 h-12 bg-secondary-container rounded-xl flex items-center justify-center text-primary mb-6">
+<span class="material-symbols-outlined text-[24px]">auto_fix_high</span>
+</div>
+<h4 class="text-lg font-bold text-primary mb-3">Self-Healing Logic</h4>
+<p class="text-body-md text-on-surface-variant leading-relaxed">
+                        Donezo monitors every automated process in real-time. If a task fails due to a network hiccup or UI change, our 
+                        <span class="text-primary font-bold">autonomous repair engine</span> identifies the root cause and attempts a recovery workflow without human intervention.
+                    </p>
+<a class="inline-flex items-center gap-2 text-primary font-bold text-sm mt-6 group" href="#">
+                        Learn about AI-Recovery 
+                        <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+<!-- Directory List: Assets & Logs -->
+<div class="col-span-12 md:col-span-8 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant/20 overflow-hidden flex flex-col">
+<div class="px-container-padding py-5 border-b border-surface-variant/20 flex justify-between items-center">
+<h4 class="text-lg font-bold text-primary">Runtime Directories</h4>
+<div class="flex gap-2">
+<button class="p-1.5 hover:bg-surface-container rounded transition-all text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+</button>
+<button class="p-1.5 bg-secondary-container text-primary rounded transition-all">
+<span class="material-symbols-outlined text-[20px]">list</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<table class="w-full text-left">
+<thead class="bg-surface-container/50">
+<tr>
+<th class="px-6 py-3 font-label-caps text-label-caps text-on-surface-variant">Folder Name</th>
+<th class="px-6 py-3 font-label-caps text-label-caps text-on-surface-variant">File Count</th>
+<th class="px-6 py-3 font-label-caps text-label-caps text-on-surface-variant">Size</th>
+<th class="px-6 py-3 font-label-caps text-label-caps text-on-surface-variant">Last Modified</th>
+<th class="px-6 py-3"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/20">
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-container bg-primary-container p-1.5 rounded" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-body-md text-primary font-semibold">logs/task_history</span>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">1,248 files</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">142.5 MB</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">2 mins ago</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-container bg-primary-container p-1.5 rounded" style="font-variation-settings: 'FILL' 1;">folder_zip</span>
+<span class="font-body-md text-primary font-semibold">runtime/screenshots</span>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">450 files</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">2.1 GB</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">15 mins ago</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-container bg-primary-container p-1.5 rounded" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="font-body-md text-primary font-semibold">browser_profiles</span>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">12 profiles</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">450 MB</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Yesterday</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-[18px]">settings_backup_restore</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container/30 border-t border-surface-variant/20 text-center">
+<button class="text-body-sm font-bold text-primary hover:underline">View All Storage Clusters</button>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Stats & Visualizers -->
+<div class="grid grid-cols-12 gap-card-gap">
+<!-- Data Transfer Stat -->
+<div class="col-span-12 lg:col-span-5 bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-surface-variant/20">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant">Data Throughput</h4>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded">LIVE</span>
+</div>
+<div class="flex items-center gap-8">
+<div>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Inbound</p>
+<p class="text-2xl font-bold text-primary">45.2 <span class="text-xs">MB/s</span></p>
+</div>
+<div class="h-10 w-px bg-surface-variant/40"></div>
+<div>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Outbound</p>
+<p class="text-2xl font-bold text-primary">12.8 <span class="text-xs">MB/s</span></p>
+</div>
+</div>
+<!-- Mockup Wave Graph -->
+<div class="mt-8 h-20 w-full relative">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 400 100">
+<path d="M0 80 Q 50 20, 100 80 T 200 80 T 300 80 T 400 80 V 100 H 0 Z" fill="url(#grad1)"></path>
+<defs>
+<lineargradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#b1f0ce;stop-opacity:0.5"></stop>
+<stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.1"></stop>
+</lineargradient>
+</defs>
+<path d="M0 80 Q 50 20, 100 80 T 200 80 T 300 80 T 400 80" fill="none" stroke="#012d1d" stroke-width="2"></path>
+</svg>
+<div class="absolute inset-0 flex justify-between px-2 items-end pb-1 text-[8px] font-bold text-on-surface-variant opacity-50 uppercase">
+<span>08:00</span>
+<span>10:00</span>
+<span>12:00</span>
+<span>14:00</span>
+<span>16:00</span>
+</div>
+</div>
+</div>
+<!-- Capability 2: Environment Sandboxing -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-surface-variant/20">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant" style="font-variation-settings: 'FILL' 1;">security</span>
+<h4 class="text-lg font-bold text-primary">Environment Isolation</h4>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-6">
+                        Each browser profile operates in a strict <span class="font-bold">L3 Sandbox</span>. We prevent data leakage between sessions by rotating kernel-level fingerprints every 24 hours.
+                    </p>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-[11px] font-bold">
+<span class="text-on-surface-variant uppercase">Encryption</span>
+<span class="text-primary">AES-256 Active</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full">
+<div class="bg-primary h-full w-full"></div>
+</div>
+<div class="flex justify-between items-center text-[11px] font-bold">
+<span class="text-on-surface-variant uppercase">IP Masking</span>
+<span class="text-primary">Residential Proxy</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full">
+<div class="bg-primary h-full w-[85%]"></div>
+</div>
+</div>
+</div>
+<!-- Resource Usage Quick Card -->
+<div class="col-span-12 lg:col-span-3 bg-white rounded-xl p-container-padding border-2 border-primary-container relative overflow-hidden group">
+<div class="relative z-10">
+<p class="text-on-surface-variant text-[11px] font-bold uppercase mb-1">Total Disk Usage</p>
+<p class="text-4xl font-bold text-primary mb-4">84%</p>
+<div class="p-3 bg-primary-container text-white rounded-lg flex items-center justify-between">
+<div>
+<p class="text-[10px] opacity-70">Capacity Remaining</p>
+<p class="text-sm font-bold">12.4 GB</p>
+</div>
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<button class="w-full mt-4 py-2 border border-primary text-primary text-[11px] font-bold rounded hover:bg-primary hover:text-white transition-all">Clear Temp Logs</button>
+</div>
+<!-- Abstract Pattern -->
+<div class="absolute top-0 right-0 p-2 opacity-5">
+<span class="material-symbols-outlined text-[120px]">database</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interactions and real-time feel
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.add('scale-95');
+                setTimeout(() => this.classList.remove('scale-95'), 100);
+            });
+        });
+
+        // Simple dashboard "pulse" simulation
+        setInterval(() => {
+            const cpuVal = document.querySelector('.text-3xl.font-bold.text-primary');
+            if(cpuVal && cpuVal.innerText.includes('%')) {
+                const current = parseInt(cpuVal.innerText);
+                const variance = Math.floor(Math.random() * 5) - 2;
+                const newValue = Math.max(10, Math.min(90, current + variance));
+                cpuVal.innerHTML = `${newValue}%`;
+            }
+        }, 3000);
+    </script>
+</body></html>
