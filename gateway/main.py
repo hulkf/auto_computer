@@ -8,7 +8,8 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from core.common_utils import PROJECT_ROOT, get_logger, result
@@ -133,3 +134,24 @@ async def retry_task(task_id: str) -> dict[str, Any]:
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return result(msg="重试任务已进入队列", data=record.model_dump(mode="json"))
+
+
+@app.get("/", include_in_schema=False)
+async def console_root() -> RedirectResponse:
+    """默认打开本地自动化控制台。"""
+
+    return RedirectResponse(url="/console/")
+
+
+@app.get("/console", include_in_schema=False)
+async def console_entry() -> RedirectResponse:
+    """兼容无尾斜杠访问。"""
+
+    return RedirectResponse(url="/console/")
+
+
+app.mount(
+    "/console",
+    StaticFiles(directory=PROJECT_ROOT / "frontend", html=True),
+    name="console",
+)
