@@ -12,6 +12,7 @@ from typing import Any, TypeVar
 
 from playwright.async_api import BrowserContext, Locator, Page, Playwright, async_playwright
 
+from .ai_browser import AIBrowserOperator
 from .common_utils import (
     BROWSER_PROFILE_DIR,
     SCREENSHOT_DIR,
@@ -160,6 +161,43 @@ class PlaywrightBase:
         if not self.page:
             raise RuntimeError("页面尚未创建")
         return self.page.get_by_text(text, exact=exact)
+
+    def _ai_operator(self) -> AIBrowserOperator:
+        """获取当前页面的 AI 增强操作器；仍复用本任务页面生命周期。"""
+
+        if not self.page:
+            raise RuntimeError("页面尚未创建")
+        return AIBrowserOperator(self.page, task_id=self.task_id)
+
+    async def observe(self, instruction: str, *, limit: int = 10) -> list[dict[str, Any]]:
+        """按自然语言意图观察页面可操作目标，类似 Stagehand observe。"""
+
+        return await self._ai_operator().observe(instruction, limit=limit)
+
+    async def act(self, instruction: str, *, value: str | None = None) -> dict[str, Any]:
+        """按自然语言意图执行一次页面动作，类似 Stagehand act。"""
+
+        return await self._ai_operator().act(instruction, value=value)
+
+    async def extract(
+        self,
+        instruction: str,
+        *,
+        schema: dict[str, Any] | None = None,
+        limit_chars: int = 12000,
+    ) -> dict[str, Any]:
+        """按自然语言意图提取页面数据，类似 Stagehand extract。"""
+
+        return await self._ai_operator().extract(
+            instruction,
+            schema=schema,
+            limit_chars=limit_chars,
+        )
+
+    # 显式别名便于业务脚本表达“这里用了 AI 增强能力”。
+    ai_observe = observe
+    ai_act = act
+    ai_extract = extract
 
     async def retry(
         self,

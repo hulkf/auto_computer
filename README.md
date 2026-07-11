@@ -9,6 +9,7 @@ auto_computer/
 ├─ core/                              # 底层公共能力层（全业务复用）
 │  ├─ __init__.py
 │  ├─ playwright_base.py             # 持久 Chrome、上下文池、等待、重试、截图、统一异常
+│  ├─ ai_browser.py                  # 可选 AI 增强 observe/act/extract 浏览器操作
 │  ├─ ahk_runner.py                  # AHK EXE 参数透传、等待、输出与错误采集
 │  └─ common_utils.py                # 日志、路径、目录、JSON、快照、统一返回体
 ├─ business/                          # 固化业务脚本层（一项业务一个目录）
@@ -137,8 +138,25 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 2. 在 `business/<业务名>/task.py` 实现 `async run(params, browser_pool, *, task_id)`。
 3. 页面动作使用 `PlaywrightBase`；不得自行启动浏览器、重复截图或异常封装。
 4. 编写同目录 `readme.md`，记录参数、返回数据和调用示例。
-5. 在 `gateway/business_registry.py` 的 `BUSINESS_MODULES` 中显式注册。
+5. 在 `gateway/business_registry.py` 的 `BUSINESSES` 中显式注册。
 6. 运行测试后，只通过网关投入生产调度。
+
+## 浏览器操作层 AI 增强
+
+`PlaywrightBase` 现在除了确定性的 `by_role()`、`by_text()`、`retry()`，还提供三个类似 Stagehand 的可选能力：
+
+```python
+await automation.observe("找到搜索框和搜索按钮")
+await automation.act("在搜索框输入关键词并搜索", value="Playwright")
+payload = await automation.extract(
+    "提取商品标题和价格",
+    schema={"title": "商品标题", "price": "商品价格"},
+)
+```
+
+默认不配置模型也能运行：中台会从当前页面收集可见按钮、输入框、链接等候选元素，用本地启发式完成排序和动作。配置 `.env` 中的 `AUTOMATION_AI_BASE_URL`、`AUTOMATION_AI_API_KEY`、`AUTOMATION_AI_MODEL` 后，会把候选元素或页面文本交给 OpenAI 兼容接口做更智能的排序和结构化抽取。
+
+生产建议仍优先使用稳定的 Playwright 选择器；页面变化频繁、选择器难写、采集字段复杂时，再在业务脚本中使用 `observe/act/extract`。
 
 ## 验证
 
