@@ -13,18 +13,20 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from core.common_utils import PROJECT_ROOT, get_logger, result
+from core.codegen_recorder import CodegenRecorder
 
 # 统一从项目根目录加载本地配置，生产环境已有环境变量会保持优先。
 load_dotenv(PROJECT_ROOT / ".env")
 
 from core.playwright_base import BrowserContextPool
 from gateway.business_registry import list_businesses
-from gateway.models import BatchTaskRequest, TaskRequest
+from gateway.models import BatchTaskRequest, RecordingStartRequest, TaskRequest
 from gateway.task_manager import TaskManager
 
 
 browser_pool = BrowserContextPool()
 task_manager = TaskManager(browser_pool)
+codegen_recorder = CodegenRecorder()
 logger = get_logger(__name__)
 
 
@@ -33,7 +35,9 @@ async def lifespan(app: FastAPI):
     """网关生命周期：Playwright 按需启动，停机时统一释放后台资源。"""
 
     app.state.task_manager = task_manager
+    app.state.codegen_recorder = codegen_recorder
     yield
+    await codegen_recorder.shutdown()
     await task_manager.shutdown()
 
 
@@ -84,6 +88,43 @@ async def businesses() -> dict[str, Any]:
     """查看显式接入网关的固化业务白名单。"""
 
     return result(data=list_businesses())
+
+
+@app.post("/api/v1/recordings/start", status_code=201)
+async def start_recording(request: RecordingStartRequest) -> dict[str, Any]:
+    """Launch visible Playwright Codegen for a new business draft."""
+
+    try:
+        session = await codegen_recorder.start(
+            request.business_name,
+            request.start_url,
+            request.profile,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return result(msg="录制窗口已启动", data=session.to_dict())
+
+
+@app.get("/api/v1/recordings/current")
+async def current_recording() -> dict[str, Any]:
+    """Query the active or most recent recorder session."""
+
+    session = await codegen_recorder.status()
+    return result(data=session.to_dict() if session else None)
+
+
+@app.post("/api/v1/recordings/stop")
+async def stop_recording() -> dict[str, Any]:
+    """Stop Codegen and expose the saved raw script path."""
+
+    try:
+        session = await codegen_recorder.stop()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    message = "录制已停止，原始脚本已保存" if session.output_ready else "录制已停止，但未生成有效脚本"
+    return result(msg=message, data=session.to_dict())
 
 
 @app.post("/api/v1/tasks", status_code=202)

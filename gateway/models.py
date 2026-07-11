@@ -44,6 +44,14 @@ class BatchTaskRequest(BaseModel):
     tasks: list[TaskRequest] = Field(min_length=1, max_length=100)
 
 
+class RecordingStartRequest(BaseModel):
+    """Interactive Playwright Codegen recording parameters."""
+
+    business_name: str = Field(min_length=2, max_length=64)
+    start_url: str = Field(min_length=8, max_length=2048)
+    profile: str = Field(default="default", min_length=1, max_length=64)
+
+
 class TaskRecord(BaseModel):
     """可持久化的完整任务记录。"""
 

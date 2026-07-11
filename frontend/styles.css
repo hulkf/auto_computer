@@ -378,6 +378,13 @@ a {
   transform: translateY(-1px);
 }
 
+.btn:disabled,
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  transform: none;
+}
+
 .btn.primary {
   color: white;
   background: var(--primary);
@@ -500,6 +507,7 @@ a {
 
 .badge.success,
 .badge.succeeded,
+.badge.completed,
 .badge.active,
 .badge.online {
   color: #0b5a38;
@@ -507,6 +515,7 @@ a {
 }
 
 .badge.running,
+.badge.recording,
 .badge.web {
   color: #0d4f68;
   background: rgba(173, 226, 245, 0.35);

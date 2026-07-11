@@ -10,6 +10,7 @@ auto_computer/
 │  ├─ __init__.py
 │  ├─ playwright_base.py             # 持久 Chrome、上下文池、等待、重试、截图、统一异常
 │  ├─ ai_browser.py                  # 元素失效后的定位诊断工具箱
+│  ├─ codegen_recorder.py            # 新业务可视化录制进程与素材管理
 │  ├─ ahk_runner.py                  # AHK EXE 参数透传、等待、输出与错误采集
 │  └─ common_utils.py                # 日志、路径、目录、JSON、快照、统一返回体
 ├─ business/                          # 固化业务脚本层（一项业务一个目录）
@@ -43,6 +44,7 @@ logs/screenshots/                    # 统一异常截图
 logs/tasks/<task_id>.json            # 任务最新状态快照
 logs/tasks/<task_id>.jsonl           # 任务全生命周期审计日志
 runtime/snapshots/healing/            # 交给 Codex 的自愈证据快照
+runtime/recordings/<业务>/<ID>/        # Codegen 原始脚本、日志和会话信息
 ```
 
 ## 首次安装
@@ -78,6 +80,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 ```
 
 脚本隐藏启动进程，将输出写入 `logs/gateway.stdout.log` 和 `logs/gateway.stderr.log`，并返回 PID。真正的开机自启建议再把该命令接入 Windows 任务计划程序或 NSSM。
+
+## 录制第一个业务流程
+
+启动网关后打开 `http://127.0.0.1:8000/console/`，进入“业务录制”：
+
+1. 填写小写业务名、完整起始网址和录制 Profile。
+2. 点击“开始录制”，在弹出的浏览器中人工完成一次完整流程。
+3. 点击“停止并保存”，原始 Python Async 脚本保存到 `runtime/recordings/`。
+4. 原始脚本只作为素材，由 Codex优化定位器、参数、等待和 `fixed_operation` 后，再写入 `business/` 并注册网关。
+
+录制使用 `browser_profiles/recordings/<profile>/` 保存登录态，与生产浏览器上下文隔离。网关同一时间只允许一个录制会话。
 
 ## 网关接口
 

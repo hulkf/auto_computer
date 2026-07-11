@@ -24,6 +24,9 @@ const api = {
   submitBatch: (body) => api.request("/api/v1/tasks/batch", { method: "POST", body: JSON.stringify(body) }),
   getTask: (id) => api.request(`/api/v1/tasks/${encodeURIComponent(id)}`),
   retryTask: (id) => api.request(`/api/v1/tasks/${encodeURIComponent(id)}/retry`, { method: "POST" }),
+  startRecording: (body) => api.request("/api/v1/recordings/start", { method: "POST", body: JSON.stringify(body) }),
+  currentRecording: () => api.request("/api/v1/recordings/current"),
+  stopRecording: () => api.request("/api/v1/recordings/stop", { method: "POST" }),
 };
 
 const state = {
@@ -36,12 +39,14 @@ const state = {
   queryTask: null,
   queryError: null,
   busy: false,
+  recording: null,
 };
 
 const routes = [
   { id: "dashboard", label: "总览", icon: "dashboard" },
   { id: "business", label: "业务", icon: "business_center" },
   { id: "new-task", label: "新建任务", icon: "add_task" },
+  { id: "recorder", label: "业务录制", icon: "fiber_manual_record" },
   { id: "batch-task", label: "批量提交", icon: "account_tree" },
   { id: "task-query", label: "任务查询", icon: "search_check" },
   { id: "runtime-env", label: "运行环境", icon: "terminal" },
@@ -126,8 +131,10 @@ function statusBadge(status) {
     active: "活跃",
     idle: "空闲",
     online: "在线",
+    recording: "录制中",
+    completed: "已保存",
   }[status] || status || "未知";
-  const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", succeeded: "task_alt", failed: "warning", online: "hub" }[status] || "circle";
+  const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", succeeded: "task_alt", failed: "warning", online: "hub", recording: "fiber_manual_record", completed: "save" }[status] || "circle";
   return `<span class="badge ${status}">${icon(glyph, status === "succeeded")} ${escapeHtml(label)}</span>`;
 }
 
@@ -172,7 +179,7 @@ async function bootstrap() {
   const hash = location.hash.replace("#", "");
   state.route = routeIds.has(hash) ? hash : "dashboard";
   render();
-  await Promise.allSettled([refreshHealth(), refreshBusinesses()]);
+  await Promise.allSettled([refreshHealth(), refreshBusinesses(), refreshRecording()]);
   render();
 }
 
@@ -191,6 +198,14 @@ async function refreshBusinesses() {
     state.businesses = [
       { name: "demo_search", kind: "web", module: "business.demo_search.task", executable: null, source: "business/demo_search/task.py" },
     ];
+  }
+}
+
+async function refreshRecording() {
+  try {
+    state.recording = (await api.currentRecording()).data;
+  } catch {
+    state.recording = null;
   }
 }
 
@@ -269,6 +284,7 @@ function render() {
     dashboard: dashboardPage,
     business: businessPage,
     "new-task": newTaskPage,
+    recorder: recorderPage,
     "batch-task": batchTaskPage,
     "task-query": taskQueryPage,
     "runtime-env": runtimePage,
@@ -298,6 +314,7 @@ function bindPageEvents() {
     node.addEventListener("click", () => setRoute(node.dataset.routeButton));
   });
   if (state.route === "new-task") bindNewTask();
+  if (state.route === "recorder") bindRecorder();
   if (state.route === "batch-task") bindBatchTask();
   if (state.route === "task-query") bindTaskQuery();
   if (state.route === "api-debug") bindApiDebug();
@@ -696,6 +713,94 @@ function taskDetailPage(task, title, subtitle) {
 
 function timelineItem(title, time, glyph) {
   return `<div class="timeline-item"><div class="timeline-dot">${icon(glyph)}</div><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(time)}</span></div></div>`;
+}
+
+function recorderPage() {
+  const session = state.recording;
+  const active = session?.status === "recording";
+  return `
+    ${pageHead("业务录制", "人工操作一次，Playwright Codegen 自动生成第一版流程素材。", `<button class="btn" id="refresh-recorder">${icon("refresh")} 刷新状态</button>`)}
+    <section class="grid cols-12">
+      <div class="span-7 card pad">
+        <div class="card-head">
+          <div><h3 class="card-title">${icon("fiber_manual_record")} 启动新录制</h3><p class="card-subtitle">录制窗口使用独立持久 Profile，不影响生产浏览器池。</p></div>
+          ${active ? statusBadge("recording") : statusBadge(session?.status || "idle")}
+        </div>
+        <form id="recorder-form" class="grid">
+          <div class="field"><label for="record-business">业务名称</label><input class="input" id="record-business" value="new_business" pattern="[a-z][a-z0-9_]+" ${active ? "disabled" : ""} /></div>
+          <div class="field"><label for="record-url">起始网址</label><input class="input" id="record-url" type="url" placeholder="https://example.com" ${active ? "disabled" : ""} /></div>
+          <div class="field"><label for="record-profile">录制 Profile</label><input class="input" id="record-profile" value="default" pattern="[A-Za-z0-9_-]+" ${active ? "disabled" : ""} /></div>
+          <div class="actions">
+            <button class="btn primary" type="submit" ${active ? "disabled" : ""}>${icon("play_arrow")} 开始录制</button>
+            <button class="btn danger" type="button" id="stop-recorder" ${active ? "" : "disabled"}>${icon("stop")} 停止并保存</button>
+          </div>
+        </form>
+      </div>
+      <aside class="span-5 grid">
+        <div class="card pad">
+          <h3 class="card-title">${icon("format_list_numbered")} 使用步骤</h3>
+          <div class="divider"></div>
+          <div class="timeline">
+            ${timelineItem("填写信息并开始录制", "弹出浏览器和 Inspector", "looks_one")}
+            ${timelineItem("人工完成完整业务流程", "点击、输入和断言会自动记录", "looks_two")}
+            ${timelineItem("停止并保存原始素材", "再由 Codex优化并固化", "looks_3")}
+          </div>
+        </div>
+        <div class="card pad">
+          <h3 class="card-title">${icon("folder_open")} 当前录制</h3>
+          <div class="divider"></div>
+          ${session ? `
+            <p>状态：${statusBadge(session.status)}</p>
+            <p class="tiny muted">业务：<span class="mono">${escapeHtml(session.business_name)}</span></p>
+            <p class="tiny muted">开始：${escapeHtml(formatTime(session.started_at))}</p>
+            <p class="tiny muted">原始脚本：</p>
+            <pre class="code-panel">${escapeHtml(session.raw_script)}</pre>
+            ${session.error ? `<p class="tiny" style="color:var(--error)">${escapeHtml(session.error)}</p>` : ""}
+          ` : `<div class="empty">尚未启动录制</div>`}
+        </div>
+      </aside>
+    </section>
+  `;
+}
+
+function bindRecorder() {
+  document.getElementById("refresh-recorder").addEventListener("click", async () => {
+    await refreshRecording();
+    render();
+  });
+  document.getElementById("recorder-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      const payload = await api.startRecording({
+        business_name: document.getElementById("record-business").value.trim(),
+        start_url: document.getElementById("record-url").value.trim(),
+        profile: document.getElementById("record-profile").value.trim(),
+      });
+      state.recording = payload.data;
+      notify("录制窗口已启动，请在浏览器中完成业务流程");
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      state.busy = false;
+      render();
+    }
+  });
+  document.getElementById("stop-recorder")?.addEventListener("click", async () => {
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      const payload = await api.stopRecording();
+      state.recording = payload.data;
+      notify(payload.data.output_ready ? "录制已保存，可以交给 Codex固化" : "未生成有效脚本，请查看错误日志后重录");
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      state.busy = false;
+      render();
+    }
+  });
 }
 
 function runtimePage() {
