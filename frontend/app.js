@@ -39,13 +39,13 @@ const state = {
 };
 
 const routes = [
-  { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { id: "business", label: "Business", icon: "business_center" },
-  { id: "new-task", label: "New Task", icon: "add_task" },
-  { id: "batch-task", label: "Batch Task", icon: "account_tree" },
-  { id: "task-query", label: "Task Query", icon: "search_check" },
-  { id: "runtime-env", label: "Runtime Env", icon: "terminal" },
-  { id: "api-debug", label: "API Debug", icon: "api" },
+  { id: "dashboard", label: "总览", icon: "dashboard" },
+  { id: "business", label: "业务", icon: "business_center" },
+  { id: "new-task", label: "新建任务", icon: "add_task" },
+  { id: "batch-task", label: "批量提交", icon: "account_tree" },
+  { id: "task-query", label: "任务查询", icon: "search_check" },
+  { id: "runtime-env", label: "运行环境", icon: "terminal" },
+  { id: "api-debug", label: "接口调试", icon: "api" },
 ];
 
 const routeIds = new Set([...routes.map((route) => route.id), "task-detail-success", "task-detail-failure"]);
@@ -67,7 +67,7 @@ const successTask = {
   created_at: "2026-07-11T04:50:27Z",
   started_at: "2026-07-11T04:50:30Z",
   finished_at: "2026-07-11T04:50:35Z",
-  result: { code: 0, msg: "success", data: { query: "local automation console", count: 5, titles: ["Local Automation Orchestration Platform", "Playwright Task Gateway", "Self-healing workflow audit", "Browser profile worker", "FastAPI task queue"], url: "https://www.bing.com/search?q=local+automation+console" }, screenshot: null },
+  result: { code: 0, msg: "success", data: { query: "本地自动化控制台", count: 5, titles: ["本地自动化调度平台", "Playwright 任务网关", "自愈工作流审计", "浏览器 Profile Worker", "FastAPI 任务队列"], url: "https://www.bing.com/search?q=local+automation+console" }, screenshot: null },
   business_source: "D:\\JR_project\\auto_computer\\business\\demo_search\\task.py",
   screenshot: null,
 };
@@ -82,8 +82,8 @@ const failureTask = {
   created_at: "2026-07-11T06:02:10Z",
   started_at: "2026-07-11T06:02:12Z",
   finished_at: "2026-07-11T06:06:24Z",
-  result: { code: 500, msg: "Deployment timeout after 3 retries. Environment stability check triggered.", data: { traceback: "ERROR: Failed to connect to downstream service 'inventory-api'.\\nTraceback (most recent call last):\\n  File \"gateway/sync_service.py\", line 142, in process_batch\\nConnectTimeout: HTTPSConnectionPool(host='api.internal.svc', port=443): Max retries exceeded" }, screenshot: "logs/screenshots/TX-4091-B_exception_20260711.png" },
-  error_traceback: "ERROR: Failed to connect to downstream service 'inventory-api'.\n[2026-07-11 06:06:24] Traceback (most recent call last): File \"gateway/sync_service.py\", line 142, in process_batch response = requests.post(TARGET_URL, json=data, timeout=5)\nConnectTimeout: HTTPSConnectionPool(host='api.internal.svc', port=443): Max retries exceeded\n// HEALING ENGINE NOTE: Auto-diagnostics suggests checking cluster DNS health.",
+  result: { code: 500, msg: "重试 3 次后部署超时，已触发环境稳定性检查。", data: { traceback: "ERROR: 无法连接下游服务 'inventory-api'.\\nTraceback (most recent call last):\\n  File \"gateway/sync_service.py\", line 142, in process_batch\\nConnectTimeout: HTTPSConnectionPool(host='api.internal.svc', port=443): Max retries exceeded" }, screenshot: "logs/screenshots/TX-4091-B_exception_20260711.png" },
+  error_traceback: "ERROR: 无法连接下游服务 'inventory-api'.\n[2026-07-11 06:06:24] Traceback (most recent call last): File \"gateway/sync_service.py\", line 142, in process_batch response = requests.post(TARGET_URL, json=data, timeout=5)\nConnectTimeout: HTTPSConnectionPool(host='api.internal.svc', port=443): Max retries exceeded\n// 自愈引擎提示：建议检查集群 DNS 健康状态。",
   business_source: "D:\\JR_project\\auto_computer\\business\\demo_search\\task.py",
   screenshot: "logs/screenshots/TX-4091-B_exception_20260711.png",
 };
@@ -118,22 +118,22 @@ function jsonBlock(value) {
 
 function statusBadge(status) {
   const label = {
-    queued: "Queued",
-    running: "Running",
-    healing: "Healing",
-    succeeded: "Succeeded",
-    failed: "Failed",
-    active: "Active",
-    idle: "Idle",
-    online: "Online",
-  }[status] || status || "Unknown";
+    queued: "排队中",
+    running: "运行中",
+    healing: "自愈中",
+    succeeded: "成功",
+    failed: "失败",
+    active: "活跃",
+    idle: "空闲",
+    online: "在线",
+  }[status] || status || "未知";
   const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", succeeded: "task_alt", failed: "warning", online: "hub" }[status] || "circle";
   return `<span class="badge ${status}">${icon(glyph, status === "succeeded")} ${escapeHtml(label)}</span>`;
 }
 
 function kindBadge(kind) {
   const glyph = kind === "desktop" ? "desktop_windows" : "language";
-  return `<span class="badge ${kind}">${icon(glyph)} ${escapeHtml((kind || "web").toUpperCase())}</span>`;
+  return `<span class="badge ${kind}">${icon(glyph)} ${escapeHtml(kind === "desktop" ? "桌面" : "网页")}</span>`;
 }
 
 function formatTime(value) {
@@ -203,22 +203,22 @@ function shell(content) {
           <div class="brand-mark">${icon("automation")}</div>
           <div>
             <h1 class="brand-title">Donezo</h1>
-            <div class="brand-subtitle">Automation Console</div>
+            <div class="brand-subtitle">本地自动化控制台</div>
           </div>
         </div>
-        <div class="sidebar-label">Menu</div>
+        <div class="sidebar-label">菜单</div>
         <nav class="nav">
           ${routes.map((r) => `<a class="nav-item ${active === r.id ? "active" : ""}" href="#${r.id}" data-route="${r.id}">${icon(r.icon, active === r.id)}<span>${r.label}</span></a>`).join("")}
         </nav>
         <div class="promo-card">
-          <strong>Download Mobile App</strong>
-          <p>Manage tasks on the go</p>
-          <button>Download</button>
+          <strong>本地控制台</strong>
+          <p>统一调度与自愈审计</p>
+          <button>查看状态</button>
         </div>
         <div class="sidebar-footer">
-          <a class="nav-item" href="#">${icon("settings")}<span>Settings</span></a>
-          <a class="nav-item" href="#">${icon("help")}<span>Help</span></a>
-          <a class="nav-item" style="color:var(--error)" href="#">${icon("logout")}<span>Logout</span></a>
+          <a class="nav-item" href="#">${icon("settings")}<span>设置</span></a>
+          <a class="nav-item" href="#">${icon("help")}<span>帮助</span></a>
+          <a class="nav-item" style="color:var(--error)" href="#">${icon("logout")}<span>退出</span></a>
         </div>
       </aside>
       <main class="main-frame">
@@ -235,15 +235,15 @@ function shell(content) {
 function topbar() {
   return `
     <header class="topbar">
-      <div class="searchbox">${icon("search")}<input placeholder="Search operations or tasks..." /><span class="kbd">⌘F</span></div>
+      <div class="searchbox">${icon("search")}<input placeholder="搜索业务、任务或操作..." /><span class="kbd">⌘F</span></div>
       <div class="top-actions">
-        ${state.health?.online ? `<span class="badge online">${icon("hub")} Gateway: Online</span>` : `<span class="badge failed">${icon("warning")} Gateway: Offline</span>`}
+        ${state.health?.online ? `<span class="badge online">${icon("hub")} 网关：在线</span>` : `<span class="badge failed">${icon("warning")} 网关：离线</span>`}
         <button class="icon-btn">${icon("mail")}</button>
         <button class="icon-btn">${icon("notifications")}</button>
         <div class="user-block">
           <div>
             <div class="user-name">Totok Michael</div>
-            <div class="user-email">Admin Console</div>
+            <div class="user-email">管理控制台</div>
           </div>
           <div class="avatar">TM</div>
         </div>
@@ -273,8 +273,8 @@ function render() {
     "task-query": taskQueryPage,
     "runtime-env": runtimePage,
     "api-debug": apiDebugPage,
-    "task-detail-success": () => taskDetailPage(successTask, "Task Detail", "Real-time status and execution breakdown for automated workflow TXN-88219-X."),
-    "task-detail-failure": () => taskDetailPage(failureTask, "Task Detail", "Failure evidence, healing context, and rerun controls for TX-4091-B."),
+    "task-detail-success": () => taskDetailPage(successTask, "任务详情", "自动化任务 TXN-88219-X 的实时状态、执行结果与请求明细。"),
+    "task-detail-failure": () => taskDetailPage(failureTask, "任务详情", "任务 TX-4091-B 的失败证据、自愈上下文与重跑控制。"),
   }[state.route] || dashboardPage;
   document.getElementById("app").innerHTML = shell(page());
   bindGlobalEvents();
@@ -307,43 +307,43 @@ function bindPageEvents() {
 function dashboardPage() {
   const tasks = [...state.sessionTasks, ...mockTasks].slice(0, 5);
   return `
-    ${pageHead("Dashboard", "Plan, prioritize, and accomplish your automation tasks with ease.", `<button class="btn primary" data-route-button="new-task">${icon("add")} Add Project</button><button class="btn">${icon("cloud_upload")} Import Data</button>`)}
+    ${pageHead("总览", "查看本地自动化网关状态、任务概览与快捷操作。", `<button class="btn primary" data-route-button="new-task">${icon("add")} 新建任务</button><button class="btn">${icon("cloud_upload")} 导入数据</button>`)}
     <section class="card pad" style="margin-bottom:20px">
       <div class="card-head">
         <div>
           <h3 class="card-title">${icon("hub")} automation-gateway</h3>
-          <p class="card-subtitle">Status: ${state.health?.online ? "Stable connection" : "Offline"} • Cluster: Local Node</p>
+          <p class="card-subtitle">状态：${state.health?.online ? "连接稳定" : "离线"} • 节点：本地</p>
         </div>
         ${statusBadge(state.health?.online ? "online" : "failed")}
       </div>
-      <div class="muted tiny">Last Check ${state.health?.checkedAt ? formatTime(state.health.checkedAt) : "checking..."}</div>
+      <div class="muted tiny">最近检查：${state.health?.checkedAt ? formatTime(state.health.checkedAt) : "检查中..."}</div>
     </section>
     <section class="grid cols-12">
-      ${metricCard("Queued Tasks", "24", "north_east", "+5 from last month", "queued")}
-      ${metricCard("Running", "12", "autorenew", "Active Execution", "running")}
-      ${metricCard("Healing", "3", "auto_fix_high", "Self-repairing status", "healing")}
-      ${metricCard("Succeeded", "1,024", "task_alt", "Last 24 hours", "succeeded")}
+      ${metricCard("排队任务", "24", "north_east", "较上月 +5", "queued")}
+      ${metricCard("运行中", "12", "autorenew", "正在执行", "running")}
+      ${metricCard("自愈中", "3", "auto_fix_high", "自动修复状态", "healing")}
+      ${metricCard("已成功", "1,024", "task_alt", "近 24 小时", "succeeded")}
       <div class="span-8 card pad">
         <div class="card-head">
-          <h3 class="card-title">Recent Automation Tasks</h3>
+          <h3 class="card-title">最近自动化任务</h3>
           <div class="actions"><button class="icon-btn">${icon("filter_list")}</button><button class="icon-btn">${icon("download")}</button></div>
         </div>
         ${taskTable(tasks)}
-        <button class="btn ghost" data-route-button="task-query" style="margin-top:16px">View all tasks ${icon("arrow_forward")}</button>
+        <button class="btn ghost" data-route-button="task-query" style="margin-top:16px">查看全部任务 ${icon("arrow_forward")}</button>
       </div>
       <div class="span-4 grid">
         <div class="card pad">
-          <h3 class="card-title">Quick Actions</h3>
+          <h3 class="card-title">快捷操作</h3>
           <div class="divider"></div>
-          <button class="btn" data-route-button="new-task" style="width:100%;justify-content:space-between">${icon("language")} New Web Task ${icon("add_circle")}</button>
+          <button class="btn" data-route-button="new-task" style="width:100%;justify-content:space-between">${icon("language")} 新建网页任务 ${icon("add_circle")}</button>
           <div style="height:12px"></div>
-          <button class="btn" data-route-button="new-task" style="width:100%;justify-content:space-between">${icon("desktop_windows")} New Desktop Task ${icon("add_circle")}</button>
+          <button class="btn" data-route-button="new-task" style="width:100%;justify-content:space-between">${icon("desktop_windows")} 新建桌面任务 ${icon("add_circle")}</button>
         </div>
         <div class="card pad">
-          <h3 class="card-title">Monthly Target</h3>
+          <h3 class="card-title">月度目标</h3>
           <div class="metric-value">70%</div>
           <div class="progress"><span style="width:70%"></span></div>
-          <p class="muted tiny">21,450 / 30,000 Tasks Completed</p>
+          <p class="muted tiny">已完成 21,450 / 30,000 个任务</p>
         </div>
       </div>
     </section>
@@ -366,7 +366,7 @@ function taskTable(tasks) {
   return `
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Task ID</th><th>Business Name</th><th>Kind</th><th>Status</th><th>Created At</th><th>Actions</th></tr></thead>
+        <thead><tr><th>任务 ID</th><th>业务名称</th><th>类型</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
           ${tasks.map((task) => `
             <tr>
@@ -375,7 +375,7 @@ function taskTable(tasks) {
               <td>${kindBadge(task.kind || task.request?.kind)}</td>
               <td>${statusBadge(task.status)}</td>
               <td>${escapeHtml(formatTime(task.created_at))}</td>
-              <td><button class="btn ghost" data-route-button="${task.status === "failed" ? "task-detail-failure" : "task-detail-success"}">View</button></td>
+              <td><button class="btn ghost" data-route-button="${task.status === "failed" ? "task-detail-failure" : "task-detail-success"}">查看</button></td>
             </tr>
           `).join("")}
         </tbody>
@@ -388,16 +388,16 @@ function businessPage() {
   const businesses = state.businesses.length ? state.businesses : [{ name: "demo_search", kind: "web", module: "business.demo_search.task", source: "business/demo_search/task.py" }];
   const selected = state.selectedBusiness || businesses[0];
   return `
-    ${pageHead("Business List", "Manage and monitor registered business modules across your infrastructure.", `<button class="btn">${icon("file_download")} Import Schema</button><button class="btn primary">${icon("add")} Register Business</button>`)}
+    ${pageHead("业务列表", "管理和查看当前已注册、可调度的业务白名单。", `<button class="btn">${icon("file_download")} 导入 Schema</button><button class="btn primary">${icon("add")} 注册业务</button>`)}
     <div class="drawer-layout">
       <section class="card pad">
         <div class="card-head">
-          <div class="tabs"><button class="active">All</button><button>Web</button><button>Desktop</button></div>
-          <div class="searchbox" style="width:300px;box-shadow:none;border:1px solid var(--outline-variant)">${icon("search")}<input placeholder="Search task or business..." /></div>
+          <div class="tabs"><button class="active">全部</button><button>网页</button><button>桌面</button></div>
+          <div class="searchbox" style="width:300px;box-shadow:none;border:1px solid var(--outline-variant)">${icon("search")}<input placeholder="搜索任务或业务..." /></div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Kind</th><th>Module / Path</th><th>Source Path</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>名称</th><th>类型</th><th>模块 / 路径</th><th>源码路径</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
               ${businesses.map((biz) => `
                 <tr>
@@ -406,7 +406,7 @@ function businessPage() {
                   <td class="mono tiny">${escapeHtml(biz.module || biz.executable || "-")}</td>
                   <td class="mono tiny">${escapeHtml(biz.source || "-")}</td>
                   <td>${statusBadge("active")}</td>
-                  <td><button class="btn ghost" data-business="${escapeHtml(biz.name)}">View Details</button></td>
+                  <td><button class="btn ghost" data-business="${escapeHtml(biz.name)}">查看详情</button></td>
                 </tr>
               `).join("")}
             </tbody>
@@ -426,18 +426,18 @@ function businessDrawer(biz) {
       <div class="card-head">
         <div>
           <h3 class="card-title">${icon("close")} ${escapeHtml(biz.name)}</h3>
-          <p class="card-subtitle">Detailed Business Specification</p>
+          <p class="card-subtitle">业务详细规格</p>
         </div>
         <button class="icon-btn">${icon("share")}</button>
       </div>
       <div class="grid cols-12">
-        <div class="span-6 card pad" style="background:var(--surface-low)"><div class="label-caps">Execution Count</div><h2>12.4k</h2><span class="badge success">${icon("trending_up")} 12%</span></div>
-        <div class="span-6 card pad" style="background:var(--surface-low)"><div class="label-caps">Error Rate</div><h2>0.02%</h2><span class="badge success">${icon("trending_down")} 4%</span></div>
+        <div class="span-6 card pad" style="background:var(--surface-low)"><div class="label-caps">执行次数</div><h2>12.4k</h2><span class="badge success">${icon("trending_up")} 12%</span></div>
+        <div class="span-6 card pad" style="background:var(--surface-low)"><div class="label-caps">错误率</div><h2>0.02%</h2><span class="badge success">${icon("trending_down")} 4%</span></div>
       </div>
       <div class="divider"></div>
-      <h3 class="card-title">Parameter Schema <span class="badge desktop">JSON Strict</span></h3>
+      <h3 class="card-title">参数 Schema <span class="badge desktop">JSON 严格模式</span></h3>
       <table style="margin-top:12px">
-        <thead><tr><th>Key</th><th>Type</th><th>Description</th></tr></thead>
+        <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td>query</td><td>String</td><td>搜索关键词，示例业务必填。</td></tr>
           <tr><td>limit</td><td>Integer</td><td>结果数量，建议 1 到 20。</td></tr>
@@ -445,14 +445,14 @@ function businessDrawer(biz) {
         </tbody>
       </table>
       <div class="divider"></div>
-      <h3 class="card-title">Implementation Logic <button class="btn ghost" data-copy="${escapeHtml(JSON.stringify(sample))}">${icon("content_copy")} Copy Hook</button></h3>
+      <h3 class="card-title">实现逻辑 <button class="btn ghost" data-copy="${escapeHtml(JSON.stringify(sample))}">${icon("content_copy")} 复制示例</button></h3>
       <pre class="code-panel">async function run(params, browser_pool, { task_id }) {
   const query = params.query;
   await automation.goto("https://www.bing.com/");
   return { query, titles, url };
 }</pre>
       <div class="divider"></div>
-      <button class="btn primary" data-route-button="new-task" style="width:100%">${icon("rocket_launch")} Submit Task</button>
+      <button class="btn primary" data-route-button="new-task" style="width:100%">${icon("rocket_launch")} 提交任务</button>
     </aside>
   `;
 }
@@ -462,36 +462,36 @@ function newTaskPage() {
   const first = businesses[0]?.name || "demo_search";
   const request = { kind: "web", business: first, params: { query: "local automation console", limit: 5, profile: "demo" }, args: [], timeout_seconds: 300, max_retries: 1, enable_self_healing: true };
   return `
-    ${pageHead("New Task Configuration", "Configure automated execution parameters and business logic.", `<button class="btn">${icon("save")} Draft</button><button class="btn primary" id="submit-task">${icon("rocket_launch")} Submit Task</button>`)}
+    ${pageHead("新建任务配置", "配置自动化任务的执行参数、业务和运行策略。", `<button class="btn">${icon("save")} 草稿</button><button class="btn primary" id="submit-task">${icon("rocket_launch")} 提交任务</button>`)}
     <section class="grid cols-12">
       <div class="span-8 grid">
         <section class="card pad">
-          <div class="card-head"><h3 class="card-title"><span class="badge desktop">01</span> Business Selection</h3><span class="badge desktop">Step 1 of 3</span></div>
+          <div class="card-head"><h3 class="card-title"><span class="badge desktop">01</span> 业务选择</h3><span class="badge desktop">第 1 / 3 步</span></div>
           <div class="choice-row" id="kind-choices">
-            <button class="choice-card active" data-kind="web">${icon("language")}<h4>Web Automation</h4><p>Browser workflows with Playwright profiles.</p></button>
-            <button class="choice-card" data-kind="desktop">${icon("desktop_windows")}<h4>Desktop Client</h4><p>Registered AHK executable automation.</p></button>
-            <button class="choice-card" data-kind="web">${icon("auto_fix_high")}<h4>Self-Healing</h4><p>Collect evidence and rerun after repairs.</p></button>
+            <button class="choice-card active" data-kind="web">${icon("language")}<h4>网页自动化</h4><p>使用 Playwright profile 执行浏览器流程。</p></button>
+            <button class="choice-card" data-kind="desktop">${icon("desktop_windows")}<h4>桌面客户端</h4><p>执行已注册的 AHK EXE 自动化。</p></button>
+            <button class="choice-card" data-kind="web">${icon("auto_fix_high")}<h4>自愈任务</h4><p>收集失败证据，修复后重跑。</p></button>
           </div>
           <div class="split" style="margin-top:18px">
-            <div class="field"><label>Business</label><select class="select" id="task-business">${businesses.map((b) => `<option value="${escapeHtml(b.name)}" data-kind="${escapeHtml(b.kind)}">${escapeHtml(b.name)} (${escapeHtml(b.kind)})</option>`).join("")}</select></div>
-            <div class="field"><label>Timeout Seconds</label><input class="input" id="task-timeout" type="number" value="300" min="1" max="3600" /></div>
+            <div class="field"><label>业务</label><select class="select" id="task-business">${businesses.map((b) => `<option value="${escapeHtml(b.name)}" data-kind="${escapeHtml(b.kind)}">${escapeHtml(b.name)} (${b.kind === "desktop" ? "桌面" : "网页"})</option>`).join("")}</select></div>
+            <div class="field"><label>超时时间（秒）</label><input class="input" id="task-timeout" type="number" value="300" min="1" max="3600" /></div>
           </div>
         </section>
         <section class="card pad">
-          <div class="card-head"><h3 class="card-title"><span class="badge desktop">02</span> Runtime Parameters</h3><button class="btn" id="format-json">${icon("format_align_left")} Beautify</button></div>
+          <div class="card-head"><h3 class="card-title"><span class="badge desktop">02</span> 运行参数</h3><button class="btn" id="format-json">${icon("format_align_left")} 格式化</button></div>
           <textarea id="task-params" class="code-input">${jsonBlock(request.params)}</textarea>
         </section>
       </div>
       <aside class="span-4 grid">
         <section class="card pad">
-          <h3 class="card-title"><span class="badge desktop">03</span> Execution Controls</h3>
+          <h3 class="card-title"><span class="badge desktop">03</span> 执行控制</h3>
           <div class="divider"></div>
-          <div class="field"><label>Max Retries</label><input class="input" id="task-retries" type="number" value="1" min="0" max="5" /></div>
+          <div class="field"><label>最大重试次数</label><input class="input" id="task-retries" type="number" value="1" min="0" max="5" /></div>
           <div class="divider"></div>
-          <label class="field"><span class="label-caps">Self Healing</span><select class="select" id="task-healing"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+          <label class="field"><span class="label-caps">自愈</span><select class="select" id="task-healing"><option value="true">开启</option><option value="false">关闭</option></select></label>
         </section>
         <section class="card pad">
-          <div class="card-head"><h3 class="card-title">Request Preview</h3><button class="icon-btn" id="copy-preview">${icon("content_copy")}</button></div>
+          <div class="card-head"><h3 class="card-title">请求预览</h3><button class="icon-btn" id="copy-preview">${icon("content_copy")}</button></div>
           <pre class="code-panel" id="request-preview">${jsonBlock(request)}</pre>
         </section>
         <section class="card pad" id="submit-result"><p class="muted">提交成功后会在这里显示任务 ID。</p></section>
@@ -534,11 +534,11 @@ function bindNewTask() {
       state.lastTask = payload.data;
       state.sessionTasks.unshift({ ...payload.data, business: payload.data.request.business, kind: payload.data.request.kind });
       saveSessionTasks();
-      document.getElementById("submit-result").innerHTML = `<h3 class="card-title">${icon("check_circle", true)} Task Created</h3><p class="mono">${payload.data.task_id}</p><button class="btn primary" data-route-button="task-query">${icon("search_check")} View Detail</button>`;
+      document.getElementById("submit-result").innerHTML = `<h3 class="card-title">${icon("check_circle", true)} 任务已创建</h3><p class="mono">${payload.data.task_id}</p><button class="btn primary" data-route-button="task-query">${icon("search_check")} 查看详情</button>`;
       bindGlobalEvents();
       notify("任务已进入队列");
     } catch (error) {
-      document.getElementById("submit-result").innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} Submit Failed</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
+      document.getElementById("submit-result").innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 提交失败</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
     }
   });
 }
@@ -546,16 +546,16 @@ function bindNewTask() {
 function batchTaskPage() {
   const sample = { tasks: [{ kind: "web", business: "demo_search", params: { query: "关键词", limit: 5, profile: "demo" }, args: [], timeout_seconds: 300, max_retries: 1, enable_self_healing: true }, { kind: "web", business: "demo_search", params: { query: "自愈控制台", limit: 3, profile: "demo" }, args: [], timeout_seconds: 300, max_retries: 1, enable_self_healing: true }] };
   return `
-    ${pageHead("Batch Task", "Create, validate, and submit multiple automation tasks in one controlled batch.", `<button class="btn">${icon("add")} Add Task</button><button class="btn primary" id="submit-batch">${icon("send")} Submit Batch</button>`)}
+    ${pageHead("批量提交", "一次创建、校验并提交多个自动化任务。", `<button class="btn">${icon("add")} 添加任务</button><button class="btn primary" id="submit-batch">${icon("send")} 提交批量任务</button>`)}
     <section class="grid cols-12">
       <div class="span-7 card pad">
-        <div class="card-head"><h3 class="card-title">${icon("account_tree")} Batch Payload</h3><button class="btn" id="beautify-batch">Beautify</button></div>
+        <div class="card-head"><h3 class="card-title">${icon("account_tree")} 批量请求体</h3><button class="btn" id="beautify-batch">格式化</button></div>
         <textarea id="batch-json" class="code-input" style="min-height:520px">${jsonBlock(sample)}</textarea>
       </div>
       <aside class="span-5 grid">
         <div class="card pad">
-          <h3 class="card-title">Validation Summary</h3>
-          <div class="grid cols-12" style="margin-top:16px">${metricSmall("Total", "2")}${metricSmall("Valid", "2")}${metricSmall("Errors", "0")}</div>
+          <h3 class="card-title">校验摘要</h3>
+          <div class="grid cols-12" style="margin-top:16px">${metricSmall("总数", "2")}${metricSmall("有效", "2")}${metricSmall("错误", "0")}</div>
         </div>
         <div class="card pad" id="batch-result"><div class="empty">批量提交后逐条显示成功或失败结果。</div></div>
       </aside>
@@ -577,9 +577,9 @@ function bindBatchTask() {
     try {
       const body = JSON.parse(editor.value);
       const payload = await api.submitBatch(body);
-      box.innerHTML = `<h3 class="card-title">${icon("check_circle", true)} Results</h3>${(payload.data || []).map((item, index) => `<p>${index + 1}. ${item.code === 0 ? statusBadge("succeeded") : statusBadge("failed")} <span class="mono">${escapeHtml(item.data?.task_id || item.msg)}</span></p>`).join("")}`;
+      box.innerHTML = `<h3 class="card-title">${icon("check_circle", true)} 提交结果</h3>${(payload.data || []).map((item, index) => `<p>${index + 1}. ${item.code === 0 ? statusBadge("succeeded") : statusBadge("failed")} <span class="mono">${escapeHtml(item.data?.task_id || item.msg)}</span></p>`).join("")}`;
     } catch (error) {
-      box.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} Batch Failed</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
+      box.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 批量提交失败</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
     }
   });
 }
@@ -587,17 +587,17 @@ function bindBatchTask() {
 function taskQueryPage() {
   const task = state.queryTask || state.lastTask || successTask;
   return `
-    ${pageHead("Task Query", "Trace and monitor specific automation workflows with precision.", "")}
+    ${pageHead("任务查询", "通过任务 ID 精确追踪和查看自动化任务状态。", "")}
     <section class="grid cols-12">
       <aside class="span-4 grid">
         <div class="card pad">
-          <div class="label-caps">Identifier Lookup</div>
+          <div class="label-caps">任务标识查询</div>
           <div class="searchbox" style="width:100%;margin-top:14px;box-shadow:none;border:1px solid var(--outline-variant)">${icon("fingerprint")}<input id="task-id-input" placeholder="输入 task_id" value="${escapeHtml(state.lastTask?.task_id || "")}" /></div>
-          <button class="btn primary" id="query-task" style="width:100%;margin-top:14px">${icon("search_check")} Search</button>
-          <p class="muted tiny">${icon("info")} Supports global UUIDs, local sequence IDs, and partial wildcards.</p>
+          <button class="btn primary" id="query-task" style="width:100%;margin-top:14px">${icon("search_check")} 查询</button>
+          <p class="muted tiny">${icon("info")} 支持完整任务 ID、局部 ID 和最近提交记录。</p>
         </div>
         <div class="card pad">
-          <h3 class="card-title">${icon("history")} Recent Queries</h3>
+          <h3 class="card-title">${icon("history")} 最近查询</h3>
           ${[...(state.sessionTasks || []), successTask, failureTask].slice(0, 4).map((t) => `<p><button class="btn ghost" data-query-id="${escapeHtml(t.task_id)}">${icon("receipt_long")} ${escapeHtml(t.task_id)}</button></p>`).join("")}
         </div>
       </aside>
@@ -633,10 +633,10 @@ function taskPreview(task) {
   return `
     <div class="card pad">
       <div class="card-head">
-        <div><h3 class="card-title">Task Preview ${statusBadge(task.status)}</h3><p class="card-subtitle">Monitoring ID: <span class="mono">${escapeHtml(task.task_id)}</span></p></div>
-        <div class="actions"><button class="btn">${icon("file_download")} Log Export</button><button class="btn primary" data-route-button="${task.status === "failed" ? "task-detail-failure" : "task-detail-success"}">${icon("open_in_new")} Open Detail</button></div>
+        <div><h3 class="card-title">任务预览 ${statusBadge(task.status)}</h3><p class="card-subtitle">监控 ID：<span class="mono">${escapeHtml(task.task_id)}</span></p></div>
+        <div class="actions"><button class="btn">${icon("file_download")} 导出日志</button><button class="btn primary" data-route-button="${task.status === "failed" ? "task-detail-failure" : "task-detail-success"}">${icon("open_in_new")} 打开详情</button></div>
       </div>
-      <div class="grid cols-12">${metricSmall("Attempts", task.attempts || 0)}${metricSmall("Status", task.status)}${metricSmall("Healed", task.healed ? "True" : "False")}</div>
+      <div class="grid cols-12">${metricSmall("尝试次数", task.attempts || 0)}${metricSmall("状态", statusBadge(task.status))}${metricSmall("已自愈", task.healed ? "是" : "否")}</div>
       <div class="divider"></div>
       <pre class="code-panel">${jsonBlock(task)}</pre>
     </div>
@@ -645,48 +645,48 @@ function taskPreview(task) {
 
 function taskDetailPage(task, title, subtitle) {
   return `
-    ${pageHead(title, subtitle, `<button class="btn" data-copy="${escapeHtml(task.task_id)}">${icon("content_copy")} Copy ID</button><button class="btn primary" id="retry-current">${icon("replay")} Rerun Task</button>`)}
+    ${pageHead(title, subtitle, `<button class="btn" data-copy="${escapeHtml(task.task_id)}">${icon("content_copy")} 复制 ID</button><button class="btn primary" id="retry-current">${icon("replay")} 重跑任务</button>`)}
     <section class="grid cols-12">
       <div class="span-12 card pad">
         <div class="grid cols-12">
-          <div class="span-3"><div class="label-caps">Current Status</div><h2>${statusBadge(task.status)}</h2></div>
-          <div class="span-3"><div class="label-caps">Task ID</div><h2 class="mono">${escapeHtml(task.task_id)}</h2></div>
-          <div class="span-3"><div class="label-caps">Kind</div><h2>${kindBadge(task.request.kind)}</h2></div>
-          <div class="span-3"><div class="label-caps">Attempts</div><h2>${task.attempts}</h2><p class="muted tiny">${task.healed ? "Healed rerun attempted" : "Succeeded on first run"}</p></div>
+          <div class="span-3"><div class="label-caps">当前状态</div><h2>${statusBadge(task.status)}</h2></div>
+          <div class="span-3"><div class="label-caps">任务 ID</div><h2 class="mono">${escapeHtml(task.task_id)}</h2></div>
+          <div class="span-3"><div class="label-caps">任务类型</div><h2>${kindBadge(task.request.kind)}</h2></div>
+          <div class="span-3"><div class="label-caps">尝试次数</div><h2>${task.attempts}</h2><p class="muted tiny">${task.healed ? "已执行自愈后重跑" : "首次执行成功"}</p></div>
         </div>
       </div>
       <div class="span-7 grid">
         <div class="card pad">
-          <div class="card-head"><h3 class="card-title">${icon("database")} Execution Result</h3><button class="icon-btn" data-copy="${escapeHtml(JSON.stringify(task.result || {}, null, 2))}">${icon("content_copy")}</button></div>
+          <div class="card-head"><h3 class="card-title">${icon("database")} 执行结果</h3><button class="icon-btn" data-copy="${escapeHtml(JSON.stringify(task.result || {}, null, 2))}">${icon("content_copy")}</button></div>
           <pre class="code-panel">${jsonBlock(task.result)}</pre>
         </div>
         <div class="card pad">
-          <div class="card-head"><h3 class="card-title">${icon("outbound")} Original Request</h3><button class="icon-btn" data-copy="${escapeHtml(JSON.stringify(task.request || {}, null, 2))}">${icon("content_copy")}</button></div>
+          <div class="card-head"><h3 class="card-title">${icon("outbound")} 原始请求</h3><button class="icon-btn" data-copy="${escapeHtml(JSON.stringify(task.request || {}, null, 2))}">${icon("content_copy")}</button></div>
           <pre class="code-panel">${jsonBlock(task.request)}</pre>
         </div>
         ${task.error_traceback ? `<div class="card pad"><div class="card-head"><h3 class="card-title" style="color:var(--error)">${icon("warning")} error_traceback.log</h3><button class="icon-btn" data-copy="${escapeHtml(task.error_traceback)}">${icon("content_copy")}</button></div><pre class="code-panel">${escapeHtml(task.error_traceback)}</pre></div>` : ""}
       </div>
       <aside class="span-5 grid">
         <div class="card pad">
-          <h3 class="card-title">${icon("schedule")} Execution Timeline</h3>
+          <h3 class="card-title">${icon("schedule")} 执行时间线</h3>
           <div class="divider"></div>
           <div class="timeline">
-            ${timelineItem("Created", formatTime(task.created_at), "add_circle")}
-            ${timelineItem("Started", formatTime(task.started_at), "play_circle")}
-            ${timelineItem(task.status === "failed" ? "Finished (Failed)" : "Finished", formatTime(task.finished_at), task.status === "failed" ? "error" : "check_circle")}
+            ${timelineItem("已创建", formatTime(task.created_at), "add_circle")}
+            ${timelineItem("已开始", formatTime(task.started_at), "play_circle")}
+            ${timelineItem(task.status === "failed" ? "已结束（失败）" : "已结束", formatTime(task.finished_at), task.status === "failed" ? "error" : "check_circle")}
           </div>
         </div>
         <div class="card pad">
-          <h3 class="card-title">${icon("auto_fix_high")} Healing Engine</h3>
+          <h3 class="card-title">${icon("auto_fix_high")} 自愈引擎</h3>
           <div class="divider"></div>
-          <p>${statusBadge(task.healed ? "healing" : "queued")} Healed Status: <strong>${task.healed ? "True (Active)" : "False"}</strong></p>
-          <p class="muted">System collected traceback, screenshot path, source path, and request payload for repair context.</p>
+          <p>${statusBadge(task.healed ? "healing" : "queued")} 自愈状态：<strong>${task.healed ? "已触发（活跃）" : "未触发"}</strong></p>
+          <p class="muted">系统已收集堆栈、截图路径、源码路径和请求体，作为修复上下文。</p>
         </div>
         <div class="card pad">
-          <h3 class="card-title">${icon("photo_camera")} Snapshot at Failure</h3>
-          <p class="mono tiny">${escapeHtml(task.screenshot || "No screenshot generated")}</p>
+          <h3 class="card-title">${icon("photo_camera")} 失败快照</h3>
+          <p class="mono tiny">${escapeHtml(task.screenshot || "未生成截图")}</p>
           <div class="divider"></div>
-          <h3 class="card-title">${icon("hub")} Business Source</h3>
+          <h3 class="card-title">${icon("hub")} 业务源码</h3>
           <p class="mono tiny">${escapeHtml(task.business_source || "-")}</p>
         </div>
       </aside>
@@ -700,34 +700,34 @@ function timelineItem(title, time, glyph) {
 
 function runtimePage() {
   return `
-    ${pageHead("Runtime Environment", "Monitor local self-healing clusters and manage automated resources.", `<button class="btn dark">${icon("terminal")} Open Console</button><button class="btn primary" id="refresh-health">${icon("refresh")} Restart Cluster</button>`)}
+    ${pageHead("运行环境", "查看本地自愈运行环境、目录和自动化资源状态。", `<button class="btn dark">${icon("terminal")} 打开控制台</button><button class="btn primary" id="refresh-health">${icon("refresh")} 刷新状态</button>`)}
     <section class="grid cols-12">
       <div class="span-8 grid">
         <div class="card pad">
-          <div class="card-head"><h3 class="card-title">Live Cluster: Local Node</h3>${statusBadge(state.health?.online ? "online" : "failed")}</div>
-          <div class="grid cols-12">${metricSmall("CPU Load", "24%")}${metricSmall("Memory", "4.2 GB")}${metricSmall("Uptime", "12d 04h")}</div>
+          <div class="card-head"><h3 class="card-title">实时节点：本地节点</h3>${statusBadge(state.health?.online ? "online" : "failed")}</div>
+          <div class="grid cols-12">${metricSmall("CPU 负载", "24%")}${metricSmall("内存", "4.2 GB")}${metricSmall("运行时长", "12天 04时")}</div>
         </div>
         <div class="card pad">
-          <h3 class="card-title">${icon("folder")} Runtime Directories</h3>
+          <h3 class="card-title">${icon("folder")} 运行目录</h3>
           <table style="margin-top:16px">
-            <thead><tr><th>Folder Name</th><th>File Count</th><th>Size</th><th>Action</th></tr></thead>
+            <thead><tr><th>目录名称</th><th>用途</th><th>大小</th><th>操作</th></tr></thead>
             <tbody>
-              <tr><td class="mono">logs/tasks</td><td>Task snapshots</td><td>142.5 MB</td><td>${icon("download")}</td></tr>
-              <tr><td class="mono">logs/screenshots</td><td>Failure evidence</td><td>2.1 GB</td><td>${icon("visibility")}</td></tr>
-              <tr><td class="mono">browser_profiles</td><td>Persistent profiles</td><td>450 MB</td><td>${icon("security")}</td></tr>
-              <tr><td class="mono">runtime/snapshots/healing</td><td>Healing context</td><td>36 MB</td><td>${icon("settings_backup_restore")}</td></tr>
+              <tr><td class="mono">logs/tasks</td><td>任务快照</td><td>142.5 MB</td><td>${icon("download")}</td></tr>
+              <tr><td class="mono">logs/screenshots</td><td>失败证据</td><td>2.1 GB</td><td>${icon("visibility")}</td></tr>
+              <tr><td class="mono">browser_profiles</td><td>持久浏览器 Profile</td><td>450 MB</td><td>${icon("security")}</td></tr>
+              <tr><td class="mono">runtime/snapshots/healing</td><td>自愈上下文</td><td>36 MB</td><td>${icon("settings_backup_restore")}</td></tr>
             </tbody>
           </table>
         </div>
       </div>
       <aside class="span-4 grid">
         <div class="card pad">
-          <h3 class="card-title">${icon("auto_fix_high")} Self-Healing Logic</h3>
-          <p class="muted">Donezo monitors every automated process in real time. If a task fails due to a network hiccup or UI change, the autonomous repair engine identifies the root cause and attempts a recovery workflow.</p>
-          <button class="btn ghost">Learn about AI-Recovery ${icon("arrow_forward")}</button>
+          <h3 class="card-title">${icon("auto_fix_high")} 自愈逻辑</h3>
+          <p class="muted">Donezo 实时监控每个自动化流程。当任务因网络抖动或页面变化失败时，自愈引擎会识别根因并尝试恢复流程。</p>
+          <button class="btn ghost">了解自愈机制 ${icon("arrow_forward")}</button>
         </div>
         <div class="card pad">
-          <h3 class="card-title">Data Throughput <span class="badge success">LIVE</span></h3>
+          <h3 class="card-title">数据吞吐 <span class="badge success">实时</span></h3>
           <div class="mini-chart">${[50, 72, 48, 83, 62, 96, 70, 88].map((h) => `<span style="height:${h}%"></span>`).join("")}</div>
         </div>
       </aside>
@@ -736,21 +736,21 @@ function runtimePage() {
 }
 
 function apiDebugPage() {
-  const request = { kind: "web", business: "demo_search", params: { query: "Weekly Infrastructure Sync", limit: 5, profile: "demo" }, args: [], timeout_seconds: 300, max_retries: 1, enable_self_healing: true };
+  const request = { kind: "web", business: "demo_search", params: { query: "每周基础设施同步", limit: 5, profile: "demo" }, args: [], timeout_seconds: 300, max_retries: 1, enable_self_healing: true };
   return `
-    ${pageHead("API Debug", "Test, inspect, and monitor your automation endpoints in real-time.", `<button class="btn">${icon("history")} History</button><button class="btn primary" id="send-debug">${icon("send")} Send</button>`)}
+    ${pageHead("接口调试", "实时测试、检查和观察自动化接口响应。", `<button class="btn">${icon("history")} 历史记录</button><button class="btn primary" id="send-debug">${icon("send")} 发送</button>`)}
     <section class="grid cols-12">
       <div class="span-6 card pad">
-        <div class="card-head"><h3 class="card-title">${icon("send")} Request Setup</h3><div class="segmented"><button class="active">POST</button><button>GET</button><button>PUT</button><button>DELETE</button></div></div>
-        <div class="field"><label>Endpoint</label><select class="select" id="debug-endpoint"><option value="/api/v1/tasks">POST /api/v1/tasks</option><option value="/health">GET /health</option><option value="/api/v1/businesses">GET /api/v1/businesses</option></select></div>
+        <div class="card-head"><h3 class="card-title">${icon("send")} 请求配置</h3><div class="segmented"><button class="active">POST</button><button>GET</button><button>PUT</button><button>DELETE</button></div></div>
+        <div class="field"><label>接口地址</label><select class="select" id="debug-endpoint"><option value="/api/v1/tasks">POST /api/v1/tasks</option><option value="/health">GET /health</option><option value="/api/v1/businesses">GET /api/v1/businesses</option></select></div>
         <div class="divider"></div>
-        <div class="card-head"><h3 class="card-title">JSON Request Body</h3><button class="btn" id="beautify-debug">Beautify</button></div>
+        <div class="card-head"><h3 class="card-title">JSON 请求体</h3><button class="btn" id="beautify-debug">格式化</button></div>
         <textarea class="code-input" id="debug-body">${jsonBlock(request)}</textarea>
       </div>
       <div class="span-6 card pad">
-        <div class="card-head"><h3 class="card-title">${icon("output")} Response</h3><button class="icon-btn" id="copy-debug-response">${icon("content_copy")}</button></div>
-        <div class="grid cols-12" style="margin-bottom:18px">${metricSmall("Status", "Ready")}${metricSmall("Latency", "0 ms")}${metricSmall("Size", "0 KB")}</div>
-        <pre class="code-panel" id="debug-response">${jsonBlock({ status: "ready", timestamp: new Date().toISOString() })}</pre>
+        <div class="card-head"><h3 class="card-title">${icon("output")} 响应结果</h3><button class="icon-btn" id="copy-debug-response">${icon("content_copy")}</button></div>
+        <div class="grid cols-12" style="margin-bottom:18px">${metricSmall("状态", "就绪")}${metricSmall("延迟", "0 ms")}${metricSmall("大小", "0 KB")}</div>
+        <pre class="code-panel" id="debug-response">${jsonBlock({ status: "ready", message: "等待发送请求", timestamp: new Date().toISOString() })}</pre>
       </div>
     </section>
   `;
