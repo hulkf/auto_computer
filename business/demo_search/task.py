@@ -36,25 +36,37 @@ async def run(
         """这里是本业务唯一需要维护的网站专属操作步骤。"""
 
         await automation.goto("https://www.bing.com/")
-        action = await automation.act("在搜索框输入关键词并搜索", value=query)
-        await page.wait_for_load_state("domcontentloaded")
+        searchbox = automation.by_role("searchbox")
 
-        extracted = await automation.extract(
-            "提取当前搜索结果页面的标题文本",
-            schema={"titles": "搜索结果标题列表"},
+        async def submit_search() -> None:
+            await searchbox.fill(query)
+            await searchbox.press("Enter")
+
+        await automation.fixed_operation(
+            submit_search,
+            intent="在搜索框输入关键词并搜索",
+            current_locator="get_by_role('searchbox')",
         )
+        await page.wait_for_load_state("domcontentloaded")
 
         # 结果页没有稳定统一的 role/name，故在业务层使用站点专属 CSS。
         result_titles = page.locator("li.b_algo h2")
-        await result_titles.first.wait_for(state="visible")
+
+        async def wait_for_results() -> None:
+            await result_titles.first.wait_for(state="visible")
+
+        await automation.fixed_operation(
+            wait_for_results,
+            intent="找到搜索结果标题列表",
+            current_locator="locator('li.b_algo h2').first",
+        )
         titles = await result_titles.all_inner_texts()
         return {
             "query": query,
             "count": min(len(titles), limit),
             "titles": [title.strip() for title in titles[:limit]],
             "url": page.url,
-            "ai_action": action,
-            "ai_extract_preview": extracted,
+            "operation_mode": "fixed_playwright",
         }
 
     return await automation.execute(search)

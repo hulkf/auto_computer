@@ -20,9 +20,18 @@ from .common_utils import (
     get_logger,
     result,
     safe_name,
+    save_snapshot,
 )
 
 T = TypeVar("T")
+
+
+class BrowserDiagnosisError(RuntimeError):
+    """Fixed locator failure carrying read-only browser diagnosis evidence."""
+
+    def __init__(self, message: str, diagnosis: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.diagnosis = diagnosis
 
 
 class BrowserContextPool:
@@ -169,10 +178,16 @@ class PlaywrightBase:
             raise RuntimeError("页面尚未创建")
         return AIBrowserOperator(self.page, task_id=self.task_id)
 
-    async def observe(self, instruction: str, *, limit: int = 10) -> list[dict[str, Any]]:
+    async def observe(
+        self,
+        instruction: str,
+        *,
+        limit: int = 10,
+        use_ai: bool = True,
+    ) -> list[dict[str, Any]]:
         """按自然语言意图观察页面可操作目标，类似 Stagehand observe。"""
 
-        return await self._ai_operator().observe(instruction, limit=limit)
+        return await self._ai_operator().observe(instruction, limit=limit, use_ai=use_ai)
 
     async def act(self, instruction: str, *, value: str | None = None) -> dict[str, Any]:
         """按自然语言意图执行一次页面动作，类似 Stagehand act。"""
@@ -198,6 +213,43 @@ class PlaywrightBase:
     ai_observe = observe
     ai_act = act
     ai_extract = extract
+
+    async def fixed_operation(
+        self,
+        operation: Callable[[], Awaitable[T]],
+        *,
+        intent: str,
+        current_locator: str,
+        diagnostic_limit: int = 8,
+    ) -> T:
+        """Run a fixed locator and start read-only diagnosis only after failure."""
+
+        try:
+            return await operation()
+        except Exception as exc:
+            diagnosis: dict[str, Any] = {
+                "intent": intent,
+                "failed_locator": current_locator,
+                "original_error": str(exc),
+                "candidates": [],
+            }
+            try:
+                operator = self._ai_operator()
+                diagnosis["ai_available"] = operator.ai_enabled
+                diagnosis["ai_used"] = False
+                diagnosis["candidates"] = await operator.observe(
+                    intent,
+                    limit=diagnostic_limit,
+                    use_ai=False,
+                )
+            except Exception as diagnostic_exc:
+                diagnosis["diagnostic_error"] = str(diagnostic_exc)
+            snapshot = save_snapshot("browser_diagnostics", self.task_id, diagnosis)
+            diagnosis["snapshot"] = str(snapshot)
+            raise BrowserDiagnosisError(
+                f"Fixed locator failed; browser diagnosis saved: {exc}",
+                diagnosis,
+            ) from exc
 
     async def retry(
         self,
@@ -249,10 +301,13 @@ class PlaywrightBase:
             except Exception as exc:
                 screenshot = await self.screenshot("exception")
                 self.logger.exception("Browser task failed")
+                error_data: dict[str, Any] = {"traceback": traceback.format_exc()}
+                if isinstance(exc, BrowserDiagnosisError):
+                    error_data["browser_diagnosis"] = exc.diagnosis
                 return result(
                     code=500,
                     msg=str(exc),
-                    data={"traceback": traceback.format_exc()},
+                    data=error_data,
                     screenshot=screenshot,
                 )
             finally:

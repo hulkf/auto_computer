@@ -54,6 +54,37 @@ def _candidate_text(candidate: dict[str, Any]) -> str:
     return " ".join(str(field) for field in fields if field).lower()
 
 
+def selector_suggestions(candidate: dict[str, Any]) -> list[str]:
+    """Build stable Playwright locator suggestions for permanent source repair."""
+
+    suggestions: list[str] = []
+    role = str(candidate.get("role", "")).strip()
+    aria_label = str(candidate.get("aria_label", "")).strip()
+    text = str(candidate.get("text", "")).strip()
+    placeholder = str(candidate.get("placeholder", "")).strip()
+    test_id = str(candidate.get("test_id", "")).strip()
+    element_id = str(candidate.get("id", "")).strip()
+    name = str(candidate.get("name", "")).strip()
+
+    if role and aria_label:
+        suggestions.append(f"page.get_by_role({role!r}, name={aria_label!r})")
+    elif role and text:
+        suggestions.append(f"page.get_by_role({role!r}, name={text[:120]!r})")
+    if aria_label:
+        suggestions.append(f"page.get_by_label({aria_label!r})")
+    if placeholder:
+        suggestions.append(f"page.get_by_placeholder({placeholder!r})")
+    if test_id:
+        suggestions.append(f"page.get_by_test_id({test_id!r})")
+    if text:
+        suggestions.append(f"page.get_by_text({text[:120]!r}, exact=True)")
+    if element_id:
+        suggestions.append(f"page.locator({('#' + element_id)!r})")
+    if name:
+        suggestions.append(f"page.locator({('[name=' + repr(name) + ']')!r})")
+    return suggestions
+
+
 def rank_candidates(instruction: str, candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Rank visible page candidates without calling a model."""
 
@@ -81,6 +112,7 @@ def rank_candidates(instruction: str, candidates: list[dict[str, Any]]) -> list[
         enriched = dict(candidate)
         enriched["score"] = round(score, 3)
         enriched["reason"] = "local heuristic rank"
+        enriched["suggested_locators"] = selector_suggestions(candidate)
         ranked.append(enriched)
 
     return sorted(ranked, key=lambda item: item["score"], reverse=True)
@@ -128,12 +160,18 @@ class AIBrowserOperator:
 
         return bool(self.model and self.api_key)
 
-    async def observe(self, instruction: str, *, limit: int = 10) -> list[dict[str, Any]]:
+    async def observe(
+        self,
+        instruction: str,
+        *,
+        limit: int = 10,
+        use_ai: bool = True,
+    ) -> list[dict[str, Any]]:
         """Find visible page targets that may satisfy the natural-language intent."""
 
         candidates = await self._collect_candidates(max(limit * 8, 40))
         ranked = rank_candidates(instruction, candidates)
-        if self.ai_enabled and ranked:
+        if use_ai and self.ai_enabled and ranked:
             try:
                 ai_ranked = await self._rank_with_ai(instruction, ranked[:40])
                 if ai_ranked:
@@ -199,10 +237,20 @@ class AIBrowserOperator:
               index,
               selector: `[data-automation-ai-run="${runId}"][data-automation-ai-index="${index}"]`,
               tag: node.tagName.toLowerCase(),
-              role: node.getAttribute("role") || "",
+              role: node.getAttribute("role") || (
+                node.tagName === "BUTTON" ? "button" :
+                node.tagName === "A" && node.hasAttribute("href") ? "link" :
+                node.tagName === "TEXTAREA" ? "textbox" :
+                node.tagName === "SELECT" ? "combobox" :
+                node.tagName === "INPUT" && node.type === "search" ? "searchbox" :
+                node.tagName === "INPUT" && ["button", "submit", "reset"].includes(node.type) ? "button" :
+                node.tagName === "INPUT" && node.type !== "hidden" ? "textbox" : ""
+              ),
               text: (node.innerText || node.value || "").trim().slice(0, 300),
               aria_label: node.getAttribute("aria-label") || "",
               placeholder: node.getAttribute("placeholder") || "",
+              id: node.id || "",
+              test_id: node.getAttribute("data-testid") || node.getAttribute("data-test-id") || "",
               name: node.getAttribute("name") || "",
               type: node.getAttribute("type") || "",
               href: node.getAttribute("href") || "",

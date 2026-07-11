@@ -9,7 +9,7 @@ auto_computer/
 ├─ core/                              # 底层公共能力层（全业务复用）
 │  ├─ __init__.py
 │  ├─ playwright_base.py             # 持久 Chrome、上下文池、等待、重试、截图、统一异常
-│  ├─ ai_browser.py                  # 可选 AI 增强 observe/act/extract 浏览器操作
+│  ├─ ai_browser.py                  # 元素失效后的定位诊断工具箱
 │  ├─ ahk_runner.py                  # AHK EXE 参数透传、等待、输出与错误采集
 │  └─ common_utils.py                # 日志、路径、目录、JSON、快照、统一返回体
 ├─ business/                          # 固化业务脚本层（一项业务一个目录）
@@ -141,22 +141,21 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 5. 在 `gateway/business_registry.py` 的 `BUSINESSES` 中显式注册。
 6. 运行测试后，只通过网关投入生产调度。
 
-## 浏览器操作层 AI 增强
+## 浏览器元素失效诊断
 
-`PlaywrightBase` 现在除了确定性的 `by_role()`、`by_text()`、`retry()`，还提供三个类似 Stagehand 的可选能力：
+正式业务使用固定 Playwright 选择器，并用 `fixed_operation()` 包装可能失效的元素操作：
 
 ```python
-await automation.observe("找到搜索框和搜索按钮")
-await automation.act("在搜索框输入关键词并搜索", value="Playwright")
-payload = await automation.extract(
-    "提取商品标题和价格",
-    schema={"title": "商品标题", "price": "商品价格"},
+await automation.fixed_operation(
+    submit_search,
+    intent="在搜索框输入关键词并搜索",
+    current_locator="get_by_role('searchbox')",
 )
 ```
 
-默认不配置模型也能运行：中台会从当前页面收集可见按钮、输入框、链接等候选元素，用本地启发式完成排序和动作。配置 `.env` 中的 `AUTOMATION_AI_BASE_URL`、`AUTOMATION_AI_API_KEY`、`AUTOMATION_AI_MODEL` 后，会把候选元素或页面文本交给 OpenAI 兼容接口做更智能的排序和结构化抽取。
+正常成功时只执行固定脚本，不扫描页面，也不调用模型。固定元素失败后，中台使用本地 DOM 分析收集候选元素，生成 `get_by_role/get_by_label/get_by_test_id` 等可固化定位建议，保存诊断快照并写入统一失败 JSON；普通重试不会调用模型。最终由 Codex结合候选、报错和截图完成一次永久修复，诊断过程不会自动点击或填写页面。
 
-生产建议仍优先使用稳定的 Playwright 选择器；页面变化频繁、选择器难写、采集字段复杂时，再在业务脚本中使用 `observe/act/extract`。
+`observe/act/extract` 仍作为探索和故障验证工具保留，不应直接写入日常生产流程。Codex根据诊断候选永久修改业务源码，网关随后自动重跑固定流程。
 
 ## 验证
 

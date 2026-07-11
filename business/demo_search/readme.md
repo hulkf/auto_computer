@@ -2,7 +2,7 @@
 
 该业务展示最小业务脚本如何复用 `core.playwright_base`。业务文件只保留 Bing 搜索和结果提取步骤，浏览器上下文、登录态、等待、重试、截图、异常捕获及 JSON 返回全部由公共层负责。
 
-当前示例还演示了浏览器操作层的 `act/extract` 增强能力：搜索框输入和提交通过 `automation.act()` 完成，页面文本抽取预览通过 `automation.extract()` 完成。未配置 AI 模型时会走本地启发式；配置 `.env` 中的 `AUTOMATION_AI_*` 后会启用 OpenAI 兼容模型增强。
+当前示例使用固定 Playwright 选择器执行，不在正常流程调用模型。搜索框和结果列表通过 `automation.fixed_operation()` 包装：选择器失效时才用本地 DOM 分析生成候选定位器并随失败报告交给 Codex；普通任务重试仍为零模型 Token，最终自愈阶段才由 Codex永久修改源码。
 
 ## 网关调用
 
