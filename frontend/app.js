@@ -40,6 +40,7 @@ const state = {
   queryError: null,
   busy: false,
   recording: null,
+  recordingNotice: null,
 };
 
 const routes = [
@@ -718,6 +719,7 @@ function timelineItem(title, time, glyph) {
 function recorderPage() {
   const session = state.recording;
   const active = session?.status === "recording";
+  const notice = state.recordingNotice;
   return `
     ${pageHead("业务录制", "人工操作一次，Playwright Codegen 自动生成第一版流程素材。", `<button class="btn" id="refresh-recorder">${icon("refresh")} 刷新状态</button>`)}
     <section class="grid cols-12">
@@ -726,13 +728,16 @@ function recorderPage() {
           <div><h3 class="card-title">${icon("fiber_manual_record")} 启动新录制</h3><p class="card-subtitle">录制窗口使用独立持久 Profile，不影响生产浏览器池。</p></div>
           ${active ? statusBadge("recording") : statusBadge(session?.status || "idle")}
         </div>
-        <form id="recorder-form" class="grid">
+        <form id="recorder-form" class="grid" novalidate>
           <div class="field"><label for="record-business">业务名称</label><input class="input" id="record-business" value="new_business" pattern="[a-z][a-z0-9_]+" ${active ? "disabled" : ""} /></div>
           <div class="field"><label for="record-url">起始网址</label><input class="input" id="record-url" type="url" placeholder="https://example.com" ${active ? "disabled" : ""} /></div>
           <div class="field"><label for="record-profile">录制 Profile</label><input class="input" id="record-profile" value="default" pattern="[A-Za-z0-9_-]+" ${active ? "disabled" : ""} /></div>
           <div class="actions">
             <button class="btn primary" type="submit" ${active ? "disabled" : ""}>${icon("play_arrow")} 开始录制</button>
             <button class="btn danger" type="button" id="stop-recorder" ${active ? "" : "disabled"}>${icon("stop")} 停止并保存</button>
+          </div>
+          <div id="recorder-feedback" class="recorder-feedback ${notice?.kind || "info"}" aria-live="polite">
+            ${notice ? `${icon(notice.kind === "error" ? "warning" : notice.kind === "success" ? "check_circle" : "hourglass_top")}<span>${escapeHtml(notice.message)}</span>` : `${icon("info")}<span>填写完整信息后点击开始，系统会弹出 Codegen 浏览器和 Inspector。</span>`}
           </div>
         </form>
       </div>
@@ -771,16 +776,25 @@ function bindRecorder() {
   document.getElementById("recorder-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (state.busy) return;
-    state.busy = true;
+    const body = {
+      business_name: document.getElementById("record-business").value.trim(),
+      start_url: document.getElementById("record-url").value.trim(),
+      profile: document.getElementById("record-profile").value.trim(),
+    };
     try {
-      const payload = await api.startRecording({
-        business_name: document.getElementById("record-business").value.trim(),
-        start_url: document.getElementById("record-url").value.trim(),
-        profile: document.getElementById("record-profile").value.trim(),
-      });
+      if (!body.business_name || !body.start_url || !body.profile) throw new Error("请完整填写业务名称、起始网址和录制 Profile");
+      const parsedUrl = new URL(body.start_url);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) throw new Error("起始网址必须是完整的 http/https 地址");
+      state.busy = true;
+      const feedback = document.getElementById("recorder-feedback");
+      feedback.className = "recorder-feedback info";
+      feedback.innerHTML = `${icon("hourglass_top")}<span>正在启动 Codegen，请稍候……</span>`;
+      const payload = await api.startRecording(body);
       state.recording = payload.data;
+      state.recordingNotice = { kind: "success", message: "录制窗口已启动，请在弹出的浏览器中完成业务流程。" };
       notify("录制窗口已启动，请在浏览器中完成业务流程");
     } catch (error) {
+      state.recordingNotice = { kind: "error", message: error.message };
       notify(error.message);
     } finally {
       state.busy = false;
@@ -791,10 +805,17 @@ function bindRecorder() {
     if (state.busy) return;
     state.busy = true;
     try {
+      const feedback = document.getElementById("recorder-feedback");
+      feedback.className = "recorder-feedback info";
+      feedback.innerHTML = `${icon("hourglass_top")}<span>正在停止录制并检查脚本文件……</span>`;
       const payload = await api.stopRecording();
       state.recording = payload.data;
+      state.recordingNotice = payload.data.output_ready
+        ? { kind: "success", message: "录制已保存，可以交给 Codex优化并固化。" }
+        : { kind: "error", message: payload.data.error || "未生成有效脚本，请查看错误日志后重录。" };
       notify(payload.data.output_ready ? "录制已保存，可以交给 Codex固化" : "未生成有效脚本，请查看错误日志后重录");
     } catch (error) {
+      state.recordingNotice = { kind: "error", message: error.message };
       notify(error.message);
     } finally {
       state.busy = false;
