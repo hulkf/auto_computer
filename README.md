@@ -92,6 +92,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 
 录制使用 `browser_profiles/recordings/<profile>/` 保存登录态，与生产浏览器上下文隔离。网关同一时间只允许一个录制会话。
 
+控制台右侧是动态的 8 步流程向导，会根据真实后端状态自动推进：填写录制信息、人工录制、保存素材、配置正式业务、AI优化、注册网关、完整测试、正式完成。固化期间页面每 1.5 秒自动刷新状态，失败时停在对应步骤并显示原因，完成后可直接进入业务列表。
+
 ## 网关接口
 
 | 方法 | 路径 | 用途 |

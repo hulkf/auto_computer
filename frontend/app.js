@@ -51,6 +51,8 @@ const state = {
   busy: false,
   recording: null,
   recordingNotice: null,
+  finalize: null,
+  finalizePollTimer: null,
 };
 
 const routes = [
@@ -182,6 +184,8 @@ async function copyText(text) {
 }
 
 function setRoute(route) {
+  if (state.finalizePollTimer) clearTimeout(state.finalizePollTimer);
+  state.finalizePollTimer = null;
   state.route = route;
   location.hash = route;
   render();
@@ -218,6 +222,12 @@ async function refreshRecording() {
     state.recording = (await api.currentRecording()).data;
   } catch {
     state.recording = null;
+  }
+  try {
+    const records = (await api.listFinalize()).data || [];
+    state.finalize = records.find((item) => item.recording_id === state.recording?.recording_id) || null;
+  } catch {
+    state.finalize = null;
   }
 }
 
@@ -756,11 +766,113 @@ function timelineItem(title, time, glyph) {
   return `<div class="timeline-item"><div class="timeline-dot">${icon(glyph)}</div><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(time)}</span></div></div>`;
 }
 
+function recorderWorkflow(session, finalize) {
+  let current = 1;
+  let failedStep = 0;
+  if (session?.status === "recording") current = 2;
+  else if (session?.status === "failed") { current = 3; failedStep = 3; }
+  else if (session?.status === "completed" && session?.output_ready) current = 4;
+
+  if (finalize) {
+    const statusStep = { pending: 5, optimizing: 5, registering: 6, testing: 7, completed: 8 };
+    current = statusStep[finalize.status] || current;
+    if (finalize.status === "failed") {
+      current = finalize.test_result ? 7 : finalize.registered ? 7 : finalize.source_path ? 6 : 5;
+      failedStep = current;
+    }
+  }
+
+  const definitions = [
+    ["填写录制信息", "设置业务名、起始网址和登录 Profile", "edit_note"],
+    ["人工录制完整流程", "在 Codegen 浏览器中完成点击、输入和页面操作", "fiber_manual_record"],
+    ["停止并保存素材", "检查 raw_codegen.py 是否有效生成", "save"],
+    ["配置正式业务", "填写项目作用并确认是否自动测试", "tune"],
+    ["AI 优化脚本", "Codex整理定位器、参数、等待和异常处理", "auto_awesome"],
+    ["注册网关业务", "生成 business 目录并加入调度白名单", "app_registration"],
+    ["完整流程测试", "从头运行固化脚本并验证结果", "fact_check"],
+    ["正式业务完成", "可在业务列表查看并通过网关调度", "task_alt"],
+  ];
+  const steps = definitions.map(([title, detail, glyph], index) => {
+    const number = index + 1;
+    let status = number < current ? "done" : number === current ? "current" : "pending";
+    if (failedStep === number) status = "error";
+    if (finalize?.status === "completed") status = "done";
+    if (finalize?.status === "completed" && finalize.auto_test === false && number === 7) status = "skipped";
+    return { number, title, detail, glyph, status };
+  });
+  return { current, failedStep, steps };
+}
+
+function workflowActionText(workflow, session, finalize) {
+  if (workflow.failedStep) {
+    const reason = finalize?.error || session?.error || "当前步骤执行失败。";
+    return `${reason} ${finalize ? "请返回固化设置检查后重新执行。" : "请重新录制完整流程。"}`;
+  }
+  return {
+    1: "请先填写左侧录制信息，然后点击“开始录制”。",
+    2: "请在弹出的浏览器中完成完整业务流程，完成后返回这里点击“停止并保存”。",
+    3: "正在检查录制素材，请稍候。",
+    4: "请填写项目作用，确认固化设置，然后点击“一键固化并注册”。",
+    5: "Codex正在优化原始录制脚本，页面会自动更新状态。",
+    6: "正在生成正式 business 目录并注册网关白名单。",
+    7: "正在从头测试固化后的正式脚本。",
+    8: "业务已完成固化，可以前往业务列表查看和调度。",
+  }[workflow.current];
+}
+
+function recorderWorkflowPanel(session, finalize) {
+  const workflow = recorderWorkflow(session, finalize);
+  return `
+    <div class="card pad workflow-card">
+      <div class="card-head">
+        <div><h3 class="card-title">${icon("route")} 完整流程</h3><p class="card-subtitle">系统根据真实运行状态自动推进。</p></div>
+        <span class="badge ${workflow.failedStep ? "failed" : workflow.current === 8 ? "succeeded" : "running"}">第 ${workflow.current} / 8 步</span>
+      </div>
+      <div class="workflow-next ${workflow.failedStep ? "error" : workflow.current === 8 ? "success" : ""}" aria-live="polite">
+        ${icon(workflow.failedStep ? "warning" : workflow.current === 8 ? "check_circle" : "arrow_forward")}
+        <div><strong>${workflow.failedStep ? "需要处理" : workflow.current === 8 ? "流程已完成" : "当前需要做"}</strong><span>${escapeHtml(workflowActionText(workflow, session, finalize))}</span></div>
+      </div>
+      <ol class="workflow-steps" aria-label="业务录制与固化进度">
+        ${workflow.steps.map((step) => `
+          <li class="workflow-step ${step.status}" ${step.status === "current" ? 'aria-current="step"' : ""}>
+            <div class="workflow-marker">${step.status === "done" ? icon("check") : step.status === "error" ? icon("close") : step.status === "skipped" ? icon("remove") : step.number}</div>
+            <div><strong>${escapeHtml(step.title)}</strong><p>${escapeHtml(step.detail)}</p></div>
+            <span class="workflow-state">${{done:"已完成",current:"进行中",error:"失败",pending:"待开始",skipped:"已跳过"}[step.status]}</span>
+          </li>
+        `).join("")}
+      </ol>
+      ${finalize ? `<div class="workflow-meta"><span>流水线：<b class="mono">${escapeHtml(finalize.finalize_id)}</b></span><span>状态：${escapeHtml(finalize.status)}</span>${finalize.source_path ? `<span>脚本：<b class="mono">${escapeHtml(finalize.source_path)}</b></span>` : ""}</div>` : ""}
+      ${workflow.current === 8 ? `<button class="btn primary" data-route-button="business" style="width:100%;margin-top:16px">${icon("business_center")} 查看正式业务</button>` : ""}
+      ${workflow.failedStep && !finalize ? `<button class="btn danger" id="restart-recording-workflow" style="width:100%;margin-top:16px">${icon("replay")} 重新录制</button>` : ""}
+      ${workflow.failedStep && finalize ? `<button class="btn danger" id="retry-finalize-workflow" style="width:100%;margin-top:16px">${icon("replay")} 返回固化设置并重试</button>` : ""}
+    </div>
+  `;
+}
+
+function finalizeIsActive(finalize) {
+  return ["pending", "optimizing", "registering", "testing"].includes(finalize?.status);
+}
+
+function scheduleFinalizePolling() {
+  if (state.finalizePollTimer) clearTimeout(state.finalizePollTimer);
+  state.finalizePollTimer = null;
+  if (state.route !== "recorder" || !finalizeIsActive(state.finalize)) return;
+  state.finalizePollTimer = setTimeout(async () => {
+    try {
+      state.finalize = (await api.getFinalize(state.finalize.finalize_id)).data;
+    } catch (error) {
+      state.recordingNotice = { kind: "error", message: `固化状态刷新失败：${error.message}` };
+    }
+    render();
+  }, 1500);
+}
+
 function recorderPage() {
   const session = state.recording;
   const active = session?.status === "recording";
   const notice = state.recordingNotice;
-  const canFinalize = session?.output_ready && !active && session?.status !== "recording";
+  const canFinalize = session?.status === "completed" && session?.output_ready && !active;
+  const finalizeLocked = finalizeIsActive(state.finalize) || state.finalize?.status === "completed";
   return `
     ${pageHead("业务录制", "人工操作一次，Playwright Codegen 自动生成第一版流程素材。", `<button class="btn" id="refresh-recorder">${icon("refresh")} 刷新状态</button>`)}
     <section class="grid cols-12">
@@ -792,22 +904,14 @@ function recorderPage() {
           <div class="field"><label>起始网址</label><input class="input" id="finalize-url" type="url" value="${escapeHtml(session?.start_url || "")}" placeholder="https://example.com" /></div>
         </div>
         <div class="actions" style="margin-top:12px">
-          <button class="btn primary" id="finalize-recording">${icon("rocket_launch")} 一键固化并注册</button>
+          <button class="btn primary" id="finalize-recording" ${finalizeLocked ? "disabled" : ""}>${icon("rocket_launch")} ${finalizeLocked ? "固化流程进行中" : "一键固化并注册"}</button>
           <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="finalize-test" checked /> 固化后自动测试</label>
         </div>
         <div id="finalize-result" style="margin-top:12px"></div>
         ` : ""}
       </div>
       <aside class="span-5 grid">
-        <div class="card pad">
-          <h3 class="card-title">${icon("format_list_numbered")} 使用步骤</h3>
-          <div class="divider"></div>
-          <div class="timeline">
-            ${timelineItem("填写信息并开始录制", "弹出浏览器和 Inspector", "looks_one")}
-            ${timelineItem("人工完成完整业务流程", "点击、输入和断言会自动记录", "looks_two")}
-            ${timelineItem("停止并保存原始素材", "再由 Codex优化并固化", "looks_3")}
-          </div>
-        </div>
+        ${recorderWorkflowPanel(session, state.finalize)}
         <div class="card pad">
           <h3 class="card-title">${icon("folder_open")} 当前录制</h3>
           <div class="divider"></div>
@@ -825,6 +929,18 @@ function recorderPage() {
   `;
 }
 function bindRecorder() {
+  document.getElementById("restart-recording-workflow")?.addEventListener("click", () => {
+    state.recording = null;
+    state.finalize = null;
+    state.recordingNotice = { kind: "info", message: "请重新填写信息并录制完整流程。" };
+    render();
+  });
+  document.getElementById("retry-finalize-workflow")?.addEventListener("click", () => {
+    const field = document.getElementById("finalize-business");
+    field?.scrollIntoView({ behavior: "smooth", block: "center" });
+    field?.focus();
+    notify("请检查固化设置后重新提交");
+  });
   document.getElementById("refresh-recorder").addEventListener("click", async () => {
     await refreshRecording();
     render();
@@ -845,6 +961,7 @@ function bindRecorder() {
       const feedback = document.getElementById("recorder-feedback");
       feedback.className = "recorder-feedback info";
       feedback.innerHTML = `${icon("hourglass_top")}<span>正在启动 Codegen，请稍候……</span>`;
+      state.finalize = null;
       const payload = await api.startRecording(body);
       state.recording = payload.data;
       state.recordingNotice = { kind: "success", message: "录制窗口已启动，请在弹出的浏览器中完成业务流程。" };
@@ -897,16 +1014,20 @@ function bindRecorder() {
       };
       if (!body.business_name || !body.description || !body.start_url) throw new Error("请填写业务名称、项目作用和起始网址");
       const payload = await api.finalizeRecording(recordingId, body);
+      state.finalize = payload.data;
+      state.recordingNotice = { kind: "success", message: "固化流水线已启动，右侧流程会自动更新。" };
       resultBox.innerHTML = `<h3 class="card-title">${icon("check_circle", true)} 固化流水线已启动</h3><p class="mono">流水线 ID: ${escapeHtml(payload.data?.finalize_id || "")}</p><p class="muted">状态: ${escapeHtml(payload.data?.status || "")}</p><button class="btn ghost" data-route-button="business">查看业务列表 ${icon("arrow_forward")}</button>`;
       notify("固化流水线已启动");
     } catch (error) {
+      state.recordingNotice = { kind: "error", message: error.message };
       resultBox.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 固化失败</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
       notify(error.message);
     } finally {
       state.busy = false;
-      bindGlobalEvents();
+      render();
     }
   });
+  scheduleFinalizePolling();
 }
 
 function runtimePage() {
@@ -1055,6 +1176,8 @@ function bindHealReview() {
 window.addEventListener("hashchange", () => {
   const hash = location.hash.replace("#", "");
   if (routeIds.has(hash)) {
+    if (state.finalizePollTimer) clearTimeout(state.finalizePollTimer);
+    state.finalizePollTimer = null;
     state.route = hash;
     render();
   }

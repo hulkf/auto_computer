@@ -803,6 +803,142 @@ textarea.code-input:focus {
   background: var(--error-container);
 }
 
+.workflow-card {
+  position: sticky;
+  top: 18px;
+}
+
+.workflow-next {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  margin-bottom: 18px;
+  color: var(--primary);
+  background: var(--secondary-container);
+  border-radius: 14px;
+}
+
+.workflow-next.error {
+  color: var(--error);
+  background: var(--error-container);
+}
+
+.workflow-next.success {
+  color: #0b5a38;
+  background: rgba(149, 212, 179, 0.28);
+}
+
+.workflow-next strong,
+.workflow-next span {
+  display: block;
+}
+
+.workflow-next span {
+  margin-top: 3px;
+  font-size: 13px;
+}
+
+.workflow-steps {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.workflow-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  min-height: 68px;
+  padding-bottom: 12px;
+  color: var(--on-surface-variant);
+}
+
+.workflow-step:not(:last-child)::before {
+  position: absolute;
+  top: 34px;
+  bottom: 0;
+  left: 16px;
+  width: 2px;
+  content: "";
+  background: var(--outline-variant);
+}
+
+.workflow-step.done:not(:last-child)::before {
+  background: var(--primary-container);
+}
+
+.workflow-marker {
+  z-index: 1;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 900;
+  place-items: center;
+  background: var(--surface-highest);
+  border-radius: 999px;
+}
+
+.workflow-step.done .workflow-marker {
+  color: white;
+  background: var(--primary);
+}
+
+.workflow-step.current .workflow-marker {
+  color: var(--primary);
+  background: var(--secondary-container);
+  box-shadow: 0 0 0 4px rgba(110, 188, 139, 0.18);
+}
+
+.workflow-step.error .workflow-marker {
+  color: var(--error);
+  background: var(--error-container);
+}
+
+.workflow-step.skipped .workflow-marker {
+  color: var(--on-surface-variant);
+  background: var(--surface-highest);
+}
+
+.workflow-step strong {
+  display: block;
+  color: var(--on-surface);
+}
+
+.workflow-step p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.workflow-state {
+  padding-top: 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.workflow-step.current .workflow-state { color: var(--primary); }
+.workflow-step.done .workflow-state { color: #0b5a38; }
+.workflow-step.error .workflow-state { color: var(--error); }
+.workflow-step.skipped .workflow-state { color: var(--on-surface-variant); }
+
+.workflow-meta {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: var(--on-surface-variant);
+  font-size: 11px;
+  background: var(--surface-low);
+  border-radius: 12px;
+}
+
 .skeleton {
   position: relative;
   overflow: hidden;

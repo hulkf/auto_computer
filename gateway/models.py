@@ -123,6 +123,7 @@ class FinalizeRecord(BaseModel):
     recording_id: str
     business_name: str
     description: str = ""
+    auto_test: bool = True
     status: FinalizeStatus
     created_at: str
     updated_at: str

@@ -94,6 +94,7 @@ class FinalizeManager:
             recording_id=recording_id,
             business_name=business_name,
             description=description,
+            auto_test=auto_test,
             status=FinalizeStatus.PENDING,
             created_at=utc_now_iso(),
             updated_at=utc_now_iso(),
