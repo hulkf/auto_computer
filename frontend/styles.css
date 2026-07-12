@@ -175,6 +175,44 @@ a {
   background: var(--surface-container);
 }
 
+.nav-group {
+  margin-top: 4px;
+}
+
+.nav-group-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 24px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nav-group-title .material-symbols-outlined:last-child {
+  margin-left: auto;
+  font-size: 20px;
+}
+
+.nav-group.open .nav-group-title {
+  color: var(--primary);
+}
+
+.nav-children {
+  padding: 2px 0 6px;
+}
+
+.nav-child {
+  min-height: 40px;
+  padding-left: 50px;
+  font-size: 13px;
+}
+
+.nav-child .material-symbols-outlined {
+  font-size: 20px;
+}
+
 .nav-item.active {
   color: var(--primary);
   font-weight: 800;

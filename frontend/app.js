@@ -61,12 +61,20 @@ const routes = [
   { id: "new-task", label: "新建任务", icon: "add_task" },
   { id: "recorder", label: "业务录制", icon: "fiber_manual_record" },
   { id: "batch-task", label: "批量提交", icon: "account_tree" },
-  { id: "task-query", label: "任务查询", icon: "search_check" },
-  { id: "runtime-env", label: "运行环境", icon: "terminal" },
-  { id: "api-debug", label: "接口调试", icon: "api" },
+  {
+    id: "system-ops",
+    label: "系统运维",
+    icon: "admin_panel_settings",
+    children: [
+      { id: "task-query", label: "任务查询", icon: "search_check" },
+      { id: "runtime-env", label: "运行环境", icon: "terminal" },
+      { id: "api-debug", label: "接口调试", icon: "api" },
+    ],
+  },
 ];
 
-const routeIds = new Set([...routes.map((route) => route.id), "task-detail-success", "task-detail-failure"]);
+const flatRoutes = routes.flatMap((route) => route.children || [route]);
+const routeIds = new Set([...flatRoutes.map((route) => route.id), "task-detail-success", "task-detail-failure"]);
 
 const mockTasks = [
   { task_id: "#TK-8912", business: "demo_search", kind: "web", status: "running", created_at: "12:45 PM", attempts: 1, healed: false },
@@ -245,7 +253,7 @@ function shell(content) {
         </div>
         <div class="sidebar-label">菜单</div>
         <nav class="nav">
-          ${routes.map((r) => `<a class="nav-item ${active === r.id ? "active" : ""}" href="#${r.id}" data-route="${r.id}">${icon(r.icon, active === r.id)}<span>${r.label}</span></a>`).join("")}
+          ${renderNav(active)}
         </nav>
         <div class="promo-card">
           <strong>本地控制台</strong>
@@ -267,6 +275,23 @@ function shell(content) {
     </div>
     <div class="toast"></div>
   `;
+}
+
+function renderNav(active) {
+  return routes.map((route) => {
+    if (!route.children) {
+      return `<a class="nav-item ${active === route.id ? "active" : ""}" href="#${route.id}" data-route="${route.id}">${icon(route.icon, active === route.id)}<span>${route.label}</span></a>`;
+    }
+    const childActive = route.children.some((child) => child.id === active);
+    return `
+      <div class="nav-group ${childActive ? "open" : ""}">
+        <div class="nav-group-title">${icon(route.icon, childActive)}<span>${route.label}</span>${icon(childActive ? "expand_less" : "expand_more")}</div>
+        <div class="nav-children">
+          ${route.children.map((child) => `<a class="nav-item nav-child ${active === child.id ? "active" : ""}" href="#${child.id}" data-route="${child.id}">${icon(child.icon, active === child.id)}<span>${child.label}</span></a>`).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 function topbar() {
