@@ -37,15 +37,22 @@ if (Test-GatewayHealth) {
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Stdout = Join-Path $LogDir "gateway.stdout.log"
 $Stderr = Join-Path $LogDir "gateway.stderr.log"
+$Runner = Join-Path $LogDir "run_gateway.cmd"
+$RunnerContent = @"
+@echo off
+cd /d "$ProjectRoot"
+"$Python" -m uvicorn gateway.main:app --host "$HostAddress" --port $Port > "$Stdout" 2> "$Stderr"
+"@
+[System.IO.File]::WriteAllText($Runner, $RunnerContent, [System.Text.Encoding]::ASCII)
 
 # Start hidden in the background and return the PID for service supervision.
+# The runner cmd owns stdout/stderr redirection; this avoids Start-Process'
+# environment dictionary bug with -RedirectStandardOutput/-RedirectStandardError.
 $Process = Start-Process `
-    -FilePath $Python `
-    -ArgumentList @("-m", "uvicorn", "gateway.main:app", "--host", $HostAddress, "--port", $Port) `
+    -FilePath $env:ComSpec `
+    -ArgumentList @("/d", "/c", $Runner) `
     -WorkingDirectory $ProjectRoot `
     -WindowStyle Hidden `
-    -RedirectStandardOutput $Stdout `
-    -RedirectStandardError $Stderr `
     -PassThru
 
 Write-Output "Automation gateway started. PID=$($Process.Id), URL=$ConsoleUrl"
