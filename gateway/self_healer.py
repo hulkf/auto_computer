@@ -1,10 +1,17 @@
-"""Codex 自愈适配器：默认调用本地 Codex CLI，也支持远程 HTTP 执行器。"""
+"""Codex 自愈适配器：默认调用本地 Codex CLI，也支持远程 HTTP 执行器。
+
+修复审计增强：
+- 修复前后 diff 保存到任务记录
+- 修复后进入 healed_pending_review 状态等待人工确认
+- 支持人工审批/拒绝修复
+"""
 
 from __future__ import annotations
 
 import asyncio
 import base64
 import binascii
+import difflib
 import hashlib
 import json
 import os
@@ -62,6 +69,20 @@ class SelfHealer:
                 temporary_path.unlink(missing_ok=True)
 
     @staticmethod
+    def _generate_diff(original: str, fixed: str, source_path: Path) -> str:
+        """生成修复前后的 unified diff。"""
+
+        original_lines = original.splitlines(keepends=True)
+        fixed_lines = fixed.splitlines(keepends=True)
+        diff = difflib.unified_diff(
+            original_lines,
+            fixed_lines,
+            fromfile=str(source_path),
+            tofile=str(source_path) + " (fixed)",
+        )
+        return "".join(diff)
+
+    @staticmethod
     def _is_fixed(body: Any) -> bool:
         """只接受真正的 JSON 布尔值 true，字符串等 truthy 值一律拒绝。"""
 
@@ -83,8 +104,11 @@ class SelfHealer:
         request_payload: dict[str, Any],
         task_result: dict[str, Any],
         artifact_path: Path | None = None,
-    ) -> bool:
-        """调用选定执行器，并同时验证 fixed=true 与业务源码内容已变化。"""
+    ) -> tuple[bool, dict[str, Any] | None]:
+        """调用选定执行器修复源码，返回 (是否修复, 审计信息)。
+
+        修复成功后不直接返回 True，而是返回审计信息供调用方写入 healed_pending_review 状态。
+        """
 
         source_path = source_path.resolve()
         artifact_path = artifact_path.resolve() if artifact_path else None
@@ -112,9 +136,10 @@ class SelfHealer:
         request_payload: dict[str, Any],
         task_result: dict[str, Any],
         artifact_path: Path | None,
-    ) -> bool:
+    ) -> tuple[bool, dict[str, Any] | None]:
         """在单业务修复锁内执行一次完整修复与产物校验。"""
 
+        original_source = source_path.read_text(encoding="utf-8")
         original_hash = self._sha256(source_path)
         artifact_hash = self._sha256(artifact_path) if artifact_path else None
         payload = {
@@ -123,7 +148,7 @@ class SelfHealer:
             "business_source": str(source_path),
             "compiled_artifact": str(artifact_path) if artifact_path else None,
             # HTTP 后端只接收内容并返回候选补丁，不获得直接写真实工作区的授权。
-            "source_content": source_path.read_text(encoding="utf-8"),
+            "source_content": original_source,
             "compiled_artifact_sha256": artifact_hash,
             "error_traceback": error_traceback,
             "screenshot": screenshot,
@@ -147,22 +172,35 @@ class SelfHealer:
             body = await self._repair_with_http(payload)
         else:
             self.logger.error("Unknown healing backend: %s", self.backend)
-            return False
+            return False, None
 
         if not self._is_fixed(body):
             self.logger.warning("Codex did not return strict fixed=true")
-            return False
+            return False, None
         if self.backend == "http" and not self._apply_http_candidate(
             body, source_path, artifact_path
         ):
-            return False
+            return False, None
         if self._sha256(source_path) == original_hash:
             self.logger.error("Codex reported fixed=true but business source did not change")
-            return False
+            return False, None
         if artifact_path and self._sha256(artifact_path) == artifact_hash:
             self.logger.error("Codex reported fixed=true but compiled AHK artifact did not change")
-            return False
-        return True
+            return False, None
+
+        # 修复成功，生成审计信息
+        fixed_source = source_path.read_text(encoding="utf-8")
+        diff = self._generate_diff(original_source, fixed_source, source_path)
+
+        audit_info = {
+            "healing_diff": diff,
+            "healing_original_source": original_source,
+            "healing_fixed_source": fixed_source,
+            "healing_evidence_path": str(evidence_path),
+            "healing_codex_summary": body.get("summary", "") if isinstance(body, dict) else "",
+        }
+
+        return True, audit_info
 
     def _apply_http_candidate(
         self, body: Any, source_path: Path, artifact_path: Path | None

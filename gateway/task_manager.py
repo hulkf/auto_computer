@@ -1,4 +1,11 @@
-"""任务编排器：排队、执行、重试、持久化、失败取证和自愈重跑。"""
+"""任务编排器：排队、执行、重试、持久化、失败取证和自愈重跑。
+
+增强功能：
+- 自愈修复后进入 healed_pending_review 状态等待人工确认
+- 修复审计：保存修复前后 diff、原始源码、修复后源码
+- 人工审批/拒绝修复接口
+- 业务健康度追踪
+"""
 
 from __future__ import annotations
 
@@ -17,7 +24,7 @@ from gateway.business_registry import (
     get_desktop_executable,
     load_web_business,
 )
-from gateway.models import TaskRecord, TaskRequest, TaskStatus
+from gateway.models import BusinessHealth, BusinessHealthMetrics, ReviewHealRequest, TaskRecord, TaskRequest, TaskStatus
 from gateway.self_healer import SelfHealer
 
 
@@ -113,6 +120,136 @@ class TaskManager:
             raise ValueError("任务仍在执行中，不能手动重试")
         return await self.submit(original.request, parent_task_id=task_id)
 
+    async def review_heal(self, task_id: str, request: ReviewHealRequest) -> TaskRecord:
+        """人工审批或拒绝自愈修复。"""
+
+        async with self.state_lock:
+            record = self.records.get(task_id)
+            if not record:
+                raise KeyError(f"任务不存在: {task_id}")
+            if record.status != TaskStatus.HEALED_PENDING_REVIEW:
+                raise ValueError(f"任务状态为 {record.status}，不是待审批状态")
+
+            record.healing_reviewed = True
+            record.healing_reviewed_at = utc_now_iso()
+            record.healing_reviewer_note = request.note or ""
+
+            if request.approved:
+                # 审批通过：标记为成功
+                record.status = TaskStatus.SUCCEEDED
+                record.result = result(
+                    code=0,
+                    msg="自愈修复已人工审批通过",
+                    data={"reviewed": True, "approved": True, "note": request.note},
+                )
+                await self._save(record, "heal_review_approved")
+            else:
+                # 审批拒绝：回滚源码并标记为失败
+                if record.healing_original_source and record.business_source:
+                    try:
+                        source_path = Path(record.business_source)
+                        source_path.write_text(record.healing_original_source, encoding="utf-8")
+                    except Exception:
+                        pass  # 回滚失败不影响状态标记
+                record.status = TaskStatus.FAILED
+                record.result = result(
+                    code=500,
+                    msg="自愈修复已人工拒绝，源码已回滚",
+                    data={"reviewed": True, "approved": False, "note": request.note},
+                )
+                await self._save(record, "heal_review_rejected")
+
+            return record.model_copy(deep=True)
+
+    async def get_business_health(self, business: str) -> BusinessHealthMetrics:
+        """计算业务健康度指标。"""
+
+        total = 0
+        success = 0
+        fail = 0
+        heal_count = 0
+        heal_success = 0
+        attempts_sum = 0
+        last_run = None
+        last_heal = None
+
+        for record in self.records.values():
+            if record.request.business != business:
+                continue
+            total += 1
+            attempts_sum += record.attempts
+            if record.finished_at:
+                last_run = max(last_run or record.finished_at, record.finished_at)
+            if record.status == TaskStatus.SUCCEEDED:
+                success += 1
+                if record.healed:
+                    heal_success += 1
+                    if record.finished_at:
+                        last_heal = max(last_heal or record.finished_at, record.finished_at)
+            elif record.status == TaskStatus.FAILED:
+                fail += 1
+            elif record.status == TaskStatus.HEALED_PENDING_REVIEW:
+                # 待审批的任务视为需要关注的
+                heal_count += 1
+
+            if record.healed:
+                heal_count += 1
+
+        success_rate = (success / total * 100) if total > 0 else 0.0
+        heal_rate = (heal_count / total * 100) if total > 0 else 0.0
+        avg_attempts = (attempts_sum / total) if total > 0 else 0.0
+
+        # 选择器质量评分（简化版：基于自愈次数和成功率）
+        selector_score = max(0, 100 - heal_rate * 10 - (100 - success_rate) * 0.5)
+
+        # 健康度分级
+        if success_rate >= 99 and heal_rate == 0:
+            health = BusinessHealth.HEALTHY
+        elif success_rate >= 95 and heal_rate <= 5:
+            health = BusinessHealth.STABLE
+        elif success_rate >= 80 and heal_rate <= 20:
+            health = BusinessHealth.FRAGILE
+        else:
+            health = BusinessHealth.UNSTABLE
+
+        return BusinessHealthMetrics(
+            business=business,
+            health=health,
+            total_runs=total,
+            success_runs=success,
+            fail_runs=fail,
+            heal_count=heal_count,
+            heal_success_count=heal_success,
+            success_rate=round(success_rate, 2),
+            heal_rate=round(heal_rate, 2),
+            last_run_at=last_run,
+            last_heal_at=last_heal,
+            avg_attempts=round(avg_attempts, 2),
+            selector_quality_score=round(selector_score, 2),
+        )
+
+    async def list_all_tasks(
+        self,
+        *,
+        status: str | None = None,
+        business: str | None = None,
+        kind: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[TaskRecord]:
+        """列出任务，支持筛选和分页。"""
+
+        records = list(self.records.values())
+        if status:
+            records = [r for r in records if r.status == status]
+        if business:
+            records = [r for r in records if r.request.business == business]
+        if kind:
+            records = [r for r in records if r.request.kind == kind]
+
+        records.sort(key=lambda r: r.created_at, reverse=True)
+        return [r.model_copy(deep=True) for r in records[offset : offset + limit]]
+
     async def _transition(self, task_id: str, status: TaskStatus, event: str) -> TaskRecord:
         """原子更新状态并写入审计事件。"""
 
@@ -163,7 +300,7 @@ class TaskManager:
         return str(task_result.get("msg", "unknown error"))
 
     async def _run(self, task_id: str) -> None:
-        """执行普通重试；失败后触发一次自愈，并在确认修复后自动重跑一次。"""
+        """执行普通重试；失败后触发一次自愈，修复后进入 healed_pending_review 等待人工确认。"""
 
         async with self.execution_limit:
             record = await self._transition(task_id, TaskStatus.RUNNING, "started")
@@ -192,7 +329,7 @@ class TaskManager:
                 artifact_path = None
                 if request.kind == "desktop":
                     artifact_path, _ = get_desktop_executable(request.business)
-                fixed = await self.self_healer.repair(
+                fixed, audit_info = await self.self_healer.repair(
                     task_id=task_id,
                     business=request.business,
                     source_path=Path(record.business_source),
@@ -202,19 +339,30 @@ class TaskManager:
                     task_result=record.result or result(code=500, msg="unknown error"),
                     artifact_path=artifact_path,
                 )
-                if fixed:
+                if fixed and audit_info:
+                    # 保存修复审计信息
                     record.healed = True
+                    record.healing_diff = audit_info.get("healing_diff")
+                    record.healing_original_source = audit_info.get("healing_original_source")
+                    record.healing_fixed_source = audit_info.get("healing_fixed_source")
+                    await self._save(record, "healing_completed")
+
+                    # 修复后重跑一次
                     record.status = TaskStatus.RUNNING
                     record.attempts += 1
                     await self._save(record, "healed_rerun_started")
                     task_result = await self._attempt(record)
                     record.result = task_result
                     record.screenshot = task_result.get("screenshot")
+
                     if task_result["code"] == 0:
-                        await self._finish(record, TaskStatus.SUCCEEDED, "healed_rerun_succeeded")
+                        # 修复后成功：进入待审批状态
+                        await self._finish(record, TaskStatus.HEALED_PENDING_REVIEW, "healed_rerun_succeeded_pending_review")
                         return
-                    record.error_traceback = self._traceback_from_result(task_result)
-                    await self._save(record, "healed_rerun_failed")
+                    else:
+                        # 修复后仍失败
+                        record.error_traceback = self._traceback_from_result(task_result)
+                        await self._save(record, "healed_rerun_failed")
 
             await self._finish(record, TaskStatus.FAILED, "failed")
 

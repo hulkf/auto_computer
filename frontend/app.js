@@ -20,13 +20,22 @@ const api = {
   },
   health: () => api.request("/health"),
   businesses: () => api.request("/api/v1/businesses"),
+  businessHealth: (business) => api.request(`/api/v1/businesses/${encodeURIComponent(business)}/health`),
   submitTask: (body) => api.request("/api/v1/tasks", { method: "POST", body: JSON.stringify(body) }),
   submitBatch: (body) => api.request("/api/v1/tasks/batch", { method: "POST", body: JSON.stringify(body) }),
+  listTasks: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api.request(`/api/v1/tasks?${query}`);
+  },
   getTask: (id) => api.request(`/api/v1/tasks/${encodeURIComponent(id)}`),
   retryTask: (id) => api.request(`/api/v1/tasks/${encodeURIComponent(id)}/retry`, { method: "POST" }),
+  reviewHeal: (id, body) => api.request(`/api/v1/tasks/${encodeURIComponent(id)}/review`, { method: "POST", body: JSON.stringify(body) }),
   startRecording: (body) => api.request("/api/v1/recordings/start", { method: "POST", body: JSON.stringify(body) }),
   currentRecording: () => api.request("/api/v1/recordings/current"),
   stopRecording: () => api.request("/api/v1/recordings/stop", { method: "POST" }),
+  finalizeRecording: (recordingId, body) => api.request(`/api/v1/recordings/${encodeURIComponent(recordingId)}/finalize`, { method: "POST", body: JSON.stringify(body) }),
+  getFinalize: (id) => api.request(`/api/v1/finalize/${encodeURIComponent(id)}`),
+  listFinalize: () => api.request("/api/v1/finalize"),
 };
 
 const state = {
@@ -127,6 +136,7 @@ function statusBadge(status) {
     queued: "排队中",
     running: "运行中",
     healing: "自愈中",
+    healed_pending_review: "待审批",
     succeeded: "成功",
     failed: "失败",
     active: "活跃",
@@ -135,7 +145,7 @@ function statusBadge(status) {
     recording: "录制中",
     completed: "已保存",
   }[status] || status || "未知";
-  const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", succeeded: "task_alt", failed: "warning", online: "hub", recording: "fiber_manual_record", completed: "save" }[status] || "circle";
+  const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", healed_pending_review: "pending_actions", succeeded: "task_alt", failed: "warning", online: "hub", recording: "fiber_manual_record", completed: "save" }[status] || "circle";
   return `<span class="badge ${status}">${icon(glyph, status === "succeeded")} ${escapeHtml(label)}</span>`;
 }
 
@@ -320,6 +330,8 @@ function bindPageEvents() {
   if (state.route === "task-query") bindTaskQuery();
   if (state.route === "api-debug") bindApiDebug();
   if (state.route === "business") bindBusiness();
+  // 绑定自愈审批按钮（在任务详情页）
+  bindHealReview();
 }
 
 function dashboardPage() {
@@ -662,8 +674,23 @@ function taskPreview(task) {
 }
 
 function taskDetailPage(task, title, subtitle) {
+  const isPendingReview = task.status === "healed_pending_review";
+  const reviewActions = isPendingReview ? `
+    <div class="card pad" style="border:2px solid var(--warning)">
+      <div class="card-head"><h3 class="card-title" style="color:var(--warning)">${icon("pending_actions")} 自愈修复待审批</h3></div>
+      <p class="muted">Codex 已自动修复源码并重新执行成功。请审查修复内容后确认或拒绝。</p>
+      <div class="divider"></div>
+      <div class="actions">
+        <button class="btn success" id="heal-approve">${icon("check_circle")} 审批通过</button>
+        <button class="btn danger" id="heal-reject">${icon("block")} 拒绝并回滚</button>
+      </div>
+      <div class="field" style="margin-top:12px"><label>审批备注（可选）</label><input class="input" id="heal-note" placeholder="记录审批意见..." /></div>
+      <div id="heal-review-result" style="margin-top:12px"></div>
+    </div>
+    ${task.healing_diff ? `<div class="card pad"><div class="card-head"><h3 class="card-title">${icon("difference")} 修复 Diff</h3></div><pre class="code-panel" style="max-height:400px;overflow:auto">${escapeHtml(task.healing_diff)}</pre></div>` : ""}
+  ` : "";
   return `
-    ${pageHead(title, subtitle, `<button class="btn" data-copy="${escapeHtml(task.task_id)}">${icon("content_copy")} 复制 ID</button><button class="btn primary" id="retry-current">${icon("replay")} 重跑任务</button>`)}
+    ${pageHead(title, subtitle, `<button class="btn" data-copy="${escapeHtml(task.task_id)}">${icon("content_copy")} 复制 ID</button>${isPendingReview ? "" : `<button class="btn primary" id="retry-current">${icon("replay")} 重跑任务</button>`}`)}
     <section class="grid cols-12">
       <div class="span-12 card pad">
         <div class="grid cols-12">
@@ -674,6 +701,7 @@ function taskDetailPage(task, title, subtitle) {
         </div>
       </div>
       <div class="span-7 grid">
+        ${reviewActions}
         <div class="card pad">
           <div class="card-head"><h3 class="card-title">${icon("database")} 执行结果</h3><button class="icon-btn" data-copy="${escapeHtml(JSON.stringify(task.result || {}, null, 2))}">${icon("content_copy")}</button></div>
           <pre class="code-panel">${jsonBlock(task.result)}</pre>
@@ -698,7 +726,7 @@ function taskDetailPage(task, title, subtitle) {
           <h3 class="card-title">${icon("auto_fix_high")} 自愈引擎</h3>
           <div class="divider"></div>
           <p>${statusBadge(task.healed ? "healing" : "queued")} 自愈状态：<strong>${task.healed ? "已触发（活跃）" : "未触发"}</strong></p>
-          <p class="muted">系统已收集堆栈、截图路径、源码路径和请求体，作为修复上下文。</p>
+          <p class="muted">${task.healing_reviewed ? `已审批: ${task.healing_reviewer_note || "无备注"}` : "系统已收集堆栈、截图路径、源码路径和请求体，作为修复上下文。"}</p>
         </div>
         <div class="card pad">
           <h3 class="card-title">${icon("photo_camera")} 失败快照</h3>
@@ -717,6 +745,72 @@ function timelineItem(title, time, glyph) {
 }
 
 function recorderPage() {
+  const session = state.recording;
+  const active = session?.status === "recording";
+  const notice = state.recordingNotice;
+  const canFinalize = session?.output_ready && !active && session?.status !== "recording";
+  return `
+    ${pageHead("业务录制", "人工操作一次，Playwright Codegen 自动生成第一版流程素材。", `<button class="btn" id="refresh-recorder">${icon("refresh")} 刷新状态</button>`)}
+    <section class="grid cols-12">
+      <div class="span-7 card pad">
+        <div class="card-head">
+          <div><h3 class="card-title">${icon("fiber_manual_record")} 启动新录制</h3><p class="card-subtitle">录制窗口使用独立持久 Profile，不影响生产浏览器池。</p></div>
+          ${active ? statusBadge("recording") : statusBadge(session?.status || "idle")}
+        </div>
+        <form id="recorder-form" class="grid" novalidate>
+          <div class="field"><label for="record-business">业务名称</label><input class="input" id="record-business" value="new_business" pattern="[a-z][a-z0-9_]+" ${active ? "disabled" : ""} /></div>
+          <div class="field"><label for="record-url">起始网址</label><input class="input" id="record-url" type="url" placeholder="https://example.com" ${active ? "disabled" : ""} /></div>
+          <div class="field"><label for="record-profile">录制 Profile</label><input class="input" id="record-profile" value="default" pattern="[A-Za-z0-9_-]+" ${active ? "disabled" : ""} /></div>
+          <div class="actions">
+            <button class="btn primary" type="submit" ${active ? "disabled" : ""}>${icon("play_arrow")} 开始录制</button>
+            <button class="btn danger" type="button" id="stop-recorder" ${active ? "" : "disabled"}>${icon("stop")} 停止并保存</button>
+          </div>
+          <div id="recorder-feedback" class="recorder-feedback ${notice?.kind || "info"}" aria-live="polite">
+            ${notice ? `${icon(notice.kind === "error" ? "warning" : notice.kind === "success" ? "check_circle" : "hourglass_top")}<span>${escapeHtml(notice.message)}</span>` : `${icon("info")}<span>填写完整信息后点击开始，系统会弹出 Codegen 浏览器和 Inspector。</span>`}
+          </div>
+        </form>
+        ${canFinalize ? `
+        <div class="divider"></div>
+        <div class="card-head">
+          <div><h3 class="card-title">${icon("auto_fix_high")} 一键固化</h3><p class="card-subtitle">将录制素材交给 Codex 优化并注册为生产业务。</p></div>
+        </div>
+        <div class="grid" style="margin-top:12px">
+          <div class="field"><label>固化业务名</label><input class="input" id="finalize-business" value="${escapeHtml(session?.business_name || "new_business")}" pattern="[a-z][a-z0-9_]+" /></div>
+          <div class="field"><label>起始网址</label><input class="input" id="finalize-url" type="url" value="${escapeHtml(session?.start_url || "")}" placeholder="https://example.com" /></div>
+        </div>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" id="finalize-recording">${icon("rocket_launch")} 一键固化并注册</button>
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="finalize-test" checked /> 固化后自动测试</label>
+        </div>
+        <div id="finalize-result" style="margin-top:12px"></div>
+        ` : ""}
+      </div>
+      <aside class="span-5 grid">
+        <div class="card pad">
+          <h3 class="card-title">${icon("format_list_numbered")} 使用步骤</h3>
+          <div class="divider"></div>
+          <div class="timeline">
+            ${timelineItem("填写信息并开始录制", "弹出浏览器和 Inspector", "looks_one")}
+            ${timelineItem("人工完成完整业务流程", "点击、输入和断言会自动记录", "looks_two")}
+            ${timelineItem("停止并保存原始素材", "再由 Codex优化并固化", "looks_3")}
+          </div>
+        </div>
+        <div class="card pad">
+          <h3 class="card-title">${icon("folder_open")} 当前录制</h3>
+          <div class="divider"></div>
+          ${session ? `
+            <p>状态：${statusBadge(session.status)}</p>
+            <p class="tiny muted">业务：<span class="mono">${escapeHtml(session.business_name)}</span></p>
+            <p class="tiny muted">开始：${escapeHtml(formatTime(session.started_at))}</p>
+            <p class="tiny muted">原始脚本：</p>
+            <pre class="code-panel">${escapeHtml(session.raw_script)}</pre>
+            ${session.error ? `<p class="tiny" style="color:var(--error)">${escapeHtml(session.error)}</p>` : ""}
+          ` : `<div class="empty">尚未启动录制</div>`}
+        </div>
+      </aside>
+    </section>
+  `;
+}
   const session = state.recording;
   const active = session?.status === "recording";
   const notice = state.recordingNotice;
@@ -822,6 +916,34 @@ function bindRecorder() {
       render();
     }
   });
+  // 一键固化按钮事件绑定
+  document.getElementById("finalize-recording")?.addEventListener("click", async () => {
+    if (state.busy) return;
+    state.busy = true;
+    const resultBox = document.getElementById("finalize-result");
+    resultBox.innerHTML = `${icon("hourglass_top")}<span>正在启动固化流水线（Codex优化 → 注册 → 测试）……</span>`;
+    try {
+      const recordingId = state.recording?.recording_id;
+      if (!recordingId) throw new Error("没有可用的录制记录");
+      const body = {
+        recording_id: recordingId,
+        business_name: document.getElementById("finalize-business").value.trim(),
+        start_url: document.getElementById("finalize-url").value.trim(),
+        auto_test: document.getElementById("finalize-test")?.checked ?? true,
+        test_params: {},
+      };
+      if (!body.business_name || !body.start_url) throw new Error("请填写业务名称和起始网址");
+      const payload = await api.finalizeRecording(recordingId, body);
+      resultBox.innerHTML = `<h3 class="card-title">${icon("check_circle", true)} 固化流水线已启动</h3><p class="mono">流水线 ID: ${escapeHtml(payload.data?.finalize_id || "")}</p><p class="muted">状态: ${escapeHtml(payload.data?.status || "")}</p><button class="btn ghost" data-route-button="business">查看业务列表 ${icon("arrow_forward")}</button>`;
+      notify("固化流水线已启动");
+    } catch (error) {
+      resultBox.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 固化失败</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
+      notify(error.message);
+    } finally {
+      state.busy = false;
+      bindGlobalEvents();
+    }
+  });
 }
 
 function runtimePage() {
@@ -909,6 +1031,48 @@ function bindBusiness() {
     state.selectedBusiness = state.businesses.find((biz) => biz.name === node.dataset.business) || null;
     render();
   }));
+}
+
+function bindHealReview() {
+  const approveBtn = document.getElementById("heal-approve");
+  const rejectBtn = document.getElementById("heal-reject");
+  if (!approveBtn && !rejectBtn) return;
+
+  const taskId = state.queryTask?.task_id || state.lastTask?.task_id;
+  if (!taskId) return;
+
+  approveBtn?.addEventListener("click", async () => {
+    const note = document.getElementById("heal-note")?.value || "";
+    const resultBox = document.getElementById("heal-review-result");
+    try {
+      const payload = await api.reviewHeal(taskId, { approved: true, note });
+      resultBox.innerHTML = `<h3 class="card-title" style="color:var(--success)">${icon("check_circle", true)} 已审批通过</h3><p>${escapeHtml(note || "无备注")}</p>`;
+      notify("自愈修复已审批通过");
+      // 刷新任务状态
+      const updated = await api.getTask(taskId);
+      state.queryTask = updated.data;
+      render();
+    } catch (error) {
+      resultBox.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 审批失败</h3><p>${escapeHtml(error.message)}</p>`;
+      notify(error.message);
+    }
+  });
+
+  rejectBtn?.addEventListener("click", async () => {
+    const note = document.getElementById("heal-note")?.value || "";
+    const resultBox = document.getElementById("heal-review-result");
+    try {
+      const payload = await api.reviewHeal(taskId, { approved: false, note });
+      resultBox.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("block")} 已拒绝并回滚</h3><p>${escapeHtml(note || "无备注")}</p>`;
+      notify("自愈修复已拒绝，源码已回滚");
+      const updated = await api.getTask(taskId);
+      state.queryTask = updated.data;
+      render();
+    } catch (error) {
+      resultBox.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 审批失败</h3><p>${escapeHtml(error.message)}</p>`;
+      notify(error.message);
+    }
+  });
 }
 
 window.addEventListener("hashchange", () => {

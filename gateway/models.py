@@ -14,7 +14,28 @@ class TaskStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
     HEALING = "healing"
+    HEALED_PENDING_REVIEW = "healed_pending_review"
     SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
+class BusinessHealth(StrEnum):
+    """固化业务健康状态。"""
+
+    HEALTHY = "healthy"
+    STABLE = "stable"
+    FRAGILE = "fragile"
+    UNSTABLE = "unstable"
+
+
+class FinalizeStatus(StrEnum):
+    """一键固化流水线状态。"""
+
+    PENDING = "pending"
+    OPTIMIZING = "optimizing"
+    TESTING = "testing"
+    REGISTERING = "registering"
+    COMPLETED = "completed"
     FAILED = "failed"
 
 
@@ -68,3 +89,62 @@ class TaskRecord(BaseModel):
     error_traceback: str | None = None
     business_source: str | None = None
     screenshot: str | None = None
+    # 修复审计字段
+    healing_diff: str | None = None
+    healing_original_source: str | None = None
+    healing_fixed_source: str | None = None
+    healing_reviewed: bool = False
+    healing_reviewed_at: str | None = None
+    healing_reviewer_note: str | None = None
+
+
+class FinalizeRecordingRequest(BaseModel):
+    """一键固化录制素材请求。"""
+
+    recording_id: str = Field(min_length=1)
+    business_name: str = Field(min_length=2, max_length=64)
+    start_url: str = Field(min_length=8, max_length=2048)
+    auto_test: bool = True
+    test_params: dict[str, Any] = Field(default_factory=dict)
+
+
+class FinalizeRecord(BaseModel):
+    """一键固化流水线记录。"""
+
+    finalize_id: str
+    recording_id: str
+    business_name: str
+    status: FinalizeStatus
+    created_at: str
+    updated_at: str
+    codex_output: dict[str, Any] | None = None
+    test_task_id: str | None = None
+    test_result: dict[str, Any] | None = None
+    registered: bool = False
+    error: str | None = None
+    source_path: str | None = None
+
+
+class ReviewHealRequest(BaseModel):
+    """人工确认自愈修复请求。"""
+
+    approved: bool
+    note: str | None = None
+
+
+class BusinessHealthMetrics(BaseModel):
+    """业务健康度指标。"""
+
+    business: str
+    health: BusinessHealth
+    total_runs: int = 0
+    success_runs: int = 0
+    fail_runs: int = 0
+    heal_count: int = 0
+    heal_success_count: int = 0
+    success_rate: float = 0.0
+    heal_rate: float = 0.0
+    last_run_at: str | None = None
+    last_heal_at: str | None = None
+    avg_attempts: float = 0.0
+    selector_quality_score: float = 0.0

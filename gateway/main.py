@@ -1,4 +1,13 @@
-"""FastAPI 统一调度入口；生产环境只通过本模块调用固化业务。"""
+"""FastAPI 统一调度入口；生产环境只通过本模块调用固化业务。
+
+新增接口：
+- POST /api/v1/recordings/{recording_id}/finalize  一键固化录制素材
+- GET /api/v1/finalize/{finalize_id}               查询固化流水线状态
+- GET /api/v1/finalize                              列出所有固化记录
+- POST /api/v1/tasks/{task_id}/review               人工审批自愈修复
+- GET /api/v1/tasks                                任务列表（支持筛选分页）
+- GET /api/v1/businesses/{business}/health          业务健康度指标
+"""
 
 from __future__ import annotations
 
@@ -20,13 +29,21 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 from core.playwright_base import BrowserContextPool
 from gateway.business_registry import list_businesses
-from gateway.models import BatchTaskRequest, RecordingStartRequest, TaskRequest
+from gateway.finalize_manager import FinalizeManager
+from gateway.models import (
+    BatchTaskRequest,
+    FinalizeRecordingRequest,
+    RecordingStartRequest,
+    ReviewHealRequest,
+    TaskRequest,
+)
 from gateway.task_manager import TaskManager
 
 
 browser_pool = BrowserContextPool()
 task_manager = TaskManager(browser_pool)
 codegen_recorder = CodegenRecorder()
+finalize_manager = FinalizeManager()
 logger = get_logger(__name__)
 
 
@@ -36,6 +53,7 @@ async def lifespan(app: FastAPI):
 
     app.state.task_manager = task_manager
     app.state.codegen_recorder = codegen_recorder
+    app.state.finalize_manager = finalize_manager
     yield
     await codegen_recorder.shutdown()
     await task_manager.shutdown()
@@ -43,7 +61,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Local Automation Orchestration Platform",
-    version="1.0.0",
+    version="1.1.0",
     description="网页 Playwright 与桌面 AHK 业务的本地统一调度、自愈和审计网关。",
     lifespan=lifespan,
 )
@@ -90,6 +108,17 @@ async def businesses() -> dict[str, Any]:
     return result(data=list_businesses())
 
 
+@app.get("/api/v1/businesses/{business}/health")
+async def business_health(business: str) -> dict[str, Any]:
+    """查询业务健康度指标。"""
+
+    try:
+        metrics = await task_manager.get_business_health(business)
+        return result(data=metrics.model_dump(mode="json"))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @app.post("/api/v1/recordings/start", status_code=201)
 async def start_recording(request: RecordingStartRequest) -> dict[str, Any]:
     """Launch visible Playwright Codegen for a new business draft."""
@@ -127,6 +156,45 @@ async def stop_recording() -> dict[str, Any]:
     return result(msg=message, data=session.to_dict())
 
 
+@app.post("/api/v1/recordings/{recording_id}/finalize", status_code=202)
+async def finalize_recording(recording_id: str, request: FinalizeRecordingRequest) -> dict[str, Any]:
+    """一键固化录制素材：Codex优化 → 注册 → 测试。"""
+
+    try:
+        record = await finalize_manager.start(
+            recording_id=recording_id,
+            business_name=request.business_name,
+            start_url=request.start_url,
+            auto_test=request.auto_test,
+            test_params=request.test_params,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return result(msg="固化流水线已启动", data=record.model_dump(mode="json"))
+
+
+@app.get("/api/v1/finalize/{finalize_id}")
+async def get_finalize(finalize_id: str) -> dict[str, Any]:
+    """查询一键固化流水线状态。"""
+
+    record = await finalize_manager.get(finalize_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="固化记录不存在")
+    return result(data=record.model_dump(mode="json"))
+
+
+@app.get("/api/v1/finalize")
+async def list_finalize() -> dict[str, Any]:
+    """列出所有固化流水线记录。"""
+
+    records = await finalize_manager.list_all()
+    return result(data=[r.model_dump(mode="json") for r in records])
+
+
 @app.post("/api/v1/tasks", status_code=202)
 async def submit_task(request: TaskRequest) -> dict[str, Any]:
     """提交单个网页或桌面任务并立即返回任务 ID。"""
@@ -154,6 +222,22 @@ async def submit_batch(request: BatchTaskRequest) -> dict[str, Any]:
     return result(msg="批量任务已处理", data=records)
 
 
+@app.get("/api/v1/tasks")
+async def list_tasks(
+    status: str | None = None,
+    business: str | None = None,
+    kind: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]:
+    """列出任务，支持状态、业务、类型筛选和分页。"""
+
+    records = await task_manager.list_all_tasks(
+        status=status, business=business, kind=kind, limit=limit, offset=offset
+    )
+    return result(data=[r.model_dump(mode="json") for r in records])
+
+
 @app.get("/api/v1/tasks/{task_id}")
 async def get_task(task_id: str) -> dict[str, Any]:
     """查询任务当前状态、尝试次数、结果及失败证据。"""
@@ -175,6 +259,20 @@ async def retry_task(task_id: str) -> dict[str, Any]:
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return result(msg="重试任务已进入队列", data=record.model_dump(mode="json"))
+
+
+@app.post("/api/v1/tasks/{task_id}/review")
+async def review_heal(task_id: str, request: ReviewHealRequest) -> dict[str, Any]:
+    """人工审批或拒绝自愈修复。"""
+
+    try:
+        record = await task_manager.review_heal(task_id, request)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    action = "已审批通过" if request.approved else "已拒绝并回滚"
+    return result(msg=f"自愈修复{action}", data=record.model_dump(mode="json"))
 
 
 @app.get("/", include_in_schema=False)
