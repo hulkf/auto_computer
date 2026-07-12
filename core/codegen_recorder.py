@@ -120,6 +120,49 @@ class CodegenRecorder:
     def _session_dir(self, session: RecordingSession) -> Path:
         return Path(session.raw_script).parent
 
+    @staticmethod
+    def _prepare_replay_script(raw_script: Path) -> bool:
+        """Patch small Codegen output gaps before running a replay test.
+
+        Playwright Codegen occasionally writes the first target navigation as
+        ``await page.goto(...)`` but omits the initial ``page = await
+        context.new_page()`` line. That makes a valid recording fail instantly
+        during replay with ``NameError: name 'page' is not defined``. The raw
+        script is only a temporary recording artifact, so it is safe to repair
+        this deterministic bootstrap gap before replay and later hardening.
+
+        Returns True when the file was changed.
+        """
+
+        source = raw_script.read_text(encoding="utf-8")
+        # If Codegen already created the first page, keep the user's generated
+        # material untouched. This helper only fills the missing bootstrap line.
+        if "page = await context.new_page()" in source or "page = context.pages[0]" in source:
+            return False
+        if "await page." not in source:
+            return False
+
+        lines = source.splitlines(keepends=True)
+        repaired: list[str] = []
+        changed = False
+        for line in lines:
+            repaired.append(line)
+            if changed:
+                continue
+            # The common async Python Codegen shape is:
+            #   context = await browser.new_context()
+            #   await page.goto(...)
+            # Insert the missing page creation immediately after context setup.
+            if re.match(r"^(?P<indent>\s*)context\s*=\s*await\s+browser\.new_context\(", line):
+                indent = re.match(r"^(\s*)", line).group(1)
+                newline = "\r\n" if line.endswith("\r\n") else "\n"
+                repaired.append(f"{indent}page = await context.new_page(){newline}")
+                changed = True
+
+        if changed:
+            raw_script.write_text("".join(repaired), encoding="utf-8")
+        return changed
+
     def _save_session(self, session: RecordingSession) -> None:
         write_json(self._session_dir(session) / "session.json", session.to_dict())
 
@@ -251,6 +294,7 @@ class CodegenRecorder:
         stdout_path = session_dir / "replay.stdout.log"
         stderr_path = session_dir / "replay.stderr.log"
         env = {**os.environ, "PYTHONUTF8": "1"}
+        repaired_script = self._prepare_replay_script(Path(session.raw_script))
 
         try:
             process = await asyncio.create_subprocess_exec(
@@ -285,6 +329,7 @@ class CodegenRecorder:
             "timed_out": timed_out,
             "stdout_log": str(stdout_path),
             "stderr_log": str(stderr_path),
+            "repaired_script": repaired_script,
         }
 
         async with self._lock:

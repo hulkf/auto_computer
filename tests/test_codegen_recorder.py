@@ -130,3 +130,29 @@ def test_recording_replay_marks_saved_script_as_passed(monkeypatch, tmp_path) ->
         assert Path(tested.replay_result["stdout_log"]).name == "replay.stdout.log"
 
     asyncio.run(scenario())
+
+
+def test_prepare_replay_script_adds_missing_initial_page(tmp_path) -> None:
+    """Regression: Codegen can emit page.goto(...) before defining page."""
+
+    raw_script = tmp_path / "raw_codegen.py"
+    raw_script.write_text(
+        "\n".join(
+            [
+                "async def run(playwright):",
+                "    browser = await playwright.chromium.launch(channel='chrome', headless=False)",
+                "    context = await browser.new_context()",
+                "    await page.goto('https://example.com/')",
+                "    await context.close()",
+                "    await browser.close()",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    CodegenRecorder._prepare_replay_script(raw_script)
+
+    repaired = raw_script.read_text(encoding="utf-8")
+    assert "page = await context.new_page()" in repaired
+    assert repaired.index("page = await context.new_page()") < repaired.index("await page.goto")
