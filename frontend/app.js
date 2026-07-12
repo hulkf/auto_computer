@@ -811,57 +811,6 @@ function recorderPage() {
     </section>
   `;
 }
-  const session = state.recording;
-  const active = session?.status === "recording";
-  const notice = state.recordingNotice;
-  return `
-    ${pageHead("业务录制", "人工操作一次，Playwright Codegen 自动生成第一版流程素材。", `<button class="btn" id="refresh-recorder">${icon("refresh")} 刷新状态</button>`)}
-    <section class="grid cols-12">
-      <div class="span-7 card pad">
-        <div class="card-head">
-          <div><h3 class="card-title">${icon("fiber_manual_record")} 启动新录制</h3><p class="card-subtitle">录制窗口使用独立持久 Profile，不影响生产浏览器池。</p></div>
-          ${active ? statusBadge("recording") : statusBadge(session?.status || "idle")}
-        </div>
-        <form id="recorder-form" class="grid" novalidate>
-          <div class="field"><label for="record-business">业务名称</label><input class="input" id="record-business" value="new_business" pattern="[a-z][a-z0-9_]+" ${active ? "disabled" : ""} /></div>
-          <div class="field"><label for="record-url">起始网址</label><input class="input" id="record-url" type="url" placeholder="https://example.com" ${active ? "disabled" : ""} /></div>
-          <div class="field"><label for="record-profile">录制 Profile</label><input class="input" id="record-profile" value="default" pattern="[A-Za-z0-9_-]+" ${active ? "disabled" : ""} /></div>
-          <div class="actions">
-            <button class="btn primary" type="submit" ${active ? "disabled" : ""}>${icon("play_arrow")} 开始录制</button>
-            <button class="btn danger" type="button" id="stop-recorder" ${active ? "" : "disabled"}>${icon("stop")} 停止并保存</button>
-          </div>
-          <div id="recorder-feedback" class="recorder-feedback ${notice?.kind || "info"}" aria-live="polite">
-            ${notice ? `${icon(notice.kind === "error" ? "warning" : notice.kind === "success" ? "check_circle" : "hourglass_top")}<span>${escapeHtml(notice.message)}</span>` : `${icon("info")}<span>填写完整信息后点击开始，系统会弹出 Codegen 浏览器和 Inspector。</span>`}
-          </div>
-        </form>
-      </div>
-      <aside class="span-5 grid">
-        <div class="card pad">
-          <h3 class="card-title">${icon("format_list_numbered")} 使用步骤</h3>
-          <div class="divider"></div>
-          <div class="timeline">
-            ${timelineItem("填写信息并开始录制", "弹出浏览器和 Inspector", "looks_one")}
-            ${timelineItem("人工完成完整业务流程", "点击、输入和断言会自动记录", "looks_two")}
-            ${timelineItem("停止并保存原始素材", "再由 Codex优化并固化", "looks_3")}
-          </div>
-        </div>
-        <div class="card pad">
-          <h3 class="card-title">${icon("folder_open")} 当前录制</h3>
-          <div class="divider"></div>
-          ${session ? `
-            <p>状态：${statusBadge(session.status)}</p>
-            <p class="tiny muted">业务：<span class="mono">${escapeHtml(session.business_name)}</span></p>
-            <p class="tiny muted">开始：${escapeHtml(formatTime(session.started_at))}</p>
-            <p class="tiny muted">原始脚本：</p>
-            <pre class="code-panel">${escapeHtml(session.raw_script)}</pre>
-            ${session.error ? `<p class="tiny" style="color:var(--error)">${escapeHtml(session.error)}</p>` : ""}
-          ` : `<div class="empty">尚未启动录制</div>`}
-        </div>
-      </aside>
-    </section>
-  `;
-}
-
 function bindRecorder() {
   document.getElementById("refresh-recorder").addEventListener("click", async () => {
     await refreshRecording();
