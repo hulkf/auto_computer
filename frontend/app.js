@@ -223,7 +223,7 @@ async function refreshRecording() {
 function shell(content) {
   const active = state.route;
   return `
-    <div class="app-shell">
+    <div class="app-shell route-${escapeHtml(active)}">
       <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark">${icon("automation")}</div>

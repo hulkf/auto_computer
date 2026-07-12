@@ -235,6 +235,10 @@ a {
 .content-wrap {
   width: 100%;
   max-width: var(--content-width);
+  margin: 0 auto;
+}
+
+.route-recorder .content-wrap {
   margin: 0;
 }
 
