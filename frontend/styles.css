@@ -242,6 +242,11 @@ a {
   margin: 0;
 }
 
+.route-business .content-wrap {
+  max-width: none;
+  margin: 0;
+}
+
 .topbar {
   display: flex;
   align-items: center;
