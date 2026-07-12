@@ -79,6 +79,14 @@ Copy-Item .env.example .env
 powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 ```
 
+双击启动：
+
+```text
+启动项目.bat
+```
+
+该入口会复用同一个后台启动脚本；如果网关已经在运行，会直接打开 `http://127.0.0.1:8000/console/`，不会重复启动新进程。
+
 脚本隐藏启动进程，将输出写入 `logs/gateway.stdout.log` 和 `logs/gateway.stderr.log`，并返回 PID。真正的开机自启建议再把该命令接入 Windows 任务计划程序或 NSSM。
 
 ## 录制第一个业务流程
