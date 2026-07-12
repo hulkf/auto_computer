@@ -121,7 +121,7 @@ class CodegenRecorder:
         return Path(session.raw_script).parent
 
     @staticmethod
-    def _prepare_replay_script(raw_script: Path) -> bool:
+    def _prepare_replay_script(raw_script: Path, start_url: str | None = None) -> bool:
         """Patch small Codegen output gaps before running a replay test.
 
         Playwright Codegen occasionally writes the first target navigation as
@@ -135,11 +135,48 @@ class CodegenRecorder:
         """
 
         source = raw_script.read_text(encoding="utf-8")
+        original_source = source
+        if start_url and "data:text/html" in source:
+            # The recorder starts Codegen on a tiny bootstrap data URL to avoid
+            # first-load flakiness. Sometimes Codegen records that bootstrap
+            # navigation and meaningless html/body clicks. Replays should start
+            # from the real user URL instead.
+            source = re.sub(
+                r'(?m)^(?P<indent>\s*)await\s+page\.goto\("data:text/html[^"\n]*"\)\s*$',
+                lambda match: f'{match.group("indent")}await page.goto({json.dumps(start_url)})',
+                source,
+                count=1,
+            )
+            source = "".join(
+                line
+                for line in source.splitlines(keepends=True)
+                if not re.match(r'^\s*await\s+page\.locator\("(?:html|body)"\)\.click\(\)\s*$', line)
+            )
+        if start_url:
+            # The first navigation only needs the DOM to be ready for the next
+            # recorded click. Waiting for the full load event is brittle on
+            # pages with slow ads, analytics, or long-polling resources.
+            start_url_pattern = re.escape(start_url)
+            source = re.sub(
+                rf'(?m)^(?P<indent>\s*)await\s+page\.goto\((?P<quote>["\']){start_url_pattern}(?P=quote)\)\s*$',
+                lambda match: (
+                    f'{match.group("indent")}await page.goto('
+                    f'{json.dumps(start_url)}, wait_until="domcontentloaded", timeout=60000)'
+                ),
+                source,
+                count=1,
+            )
         # If Codegen already created the first page, keep the user's generated
         # material untouched. This helper only fills the missing bootstrap line.
         if "page = await context.new_page()" in source or "page = context.pages[0]" in source:
+            if source != original_source:
+                raw_script.write_text(source, encoding="utf-8")
+                return True
             return False
         if "await page." not in source:
+            if source != original_source:
+                raw_script.write_text(source, encoding="utf-8")
+                return True
             return False
 
         lines = source.splitlines(keepends=True)
@@ -159,9 +196,9 @@ class CodegenRecorder:
                 repaired.append(f"{indent}page = await context.new_page(){newline}")
                 changed = True
 
-        if changed:
+        if changed or source != original_source:
             raw_script.write_text("".join(repaired), encoding="utf-8")
-        return changed
+        return changed or source != original_source
 
     def _save_session(self, session: RecordingSession) -> None:
         write_json(self._session_dir(session) / "session.json", session.to_dict())
@@ -195,11 +232,19 @@ class CodegenRecorder:
             profile_dir.mkdir(parents=True, exist_ok=True)
             stdout_stream = stdout_path.open("wb")
             stderr_stream = stderr_path.open("wb")
+            codegen_env = {
+                **os.environ,
+                # Keep Chinese locator text intact in generated raw_codegen.py
+                # on Windows terminals whose default code page is not UTF-8.
+                "PYTHONUTF8": "1",
+                "PYTHONIOENCODING": "utf-8",
+            }
 
             try:
                 process = await asyncio.create_subprocess_exec(
                     *self._build_command(raw_script, profile_dir, start_url),
                     cwd=str(session_dir),
+                    env=codegen_env,
                     stdout=stdout_stream,
                     stderr=stderr_stream,
                 )
@@ -294,7 +339,7 @@ class CodegenRecorder:
         stdout_path = session_dir / "replay.stdout.log"
         stderr_path = session_dir / "replay.stderr.log"
         env = {**os.environ, "PYTHONUTF8": "1"}
-        repaired_script = self._prepare_replay_script(Path(session.raw_script))
+        repaired_script = self._prepare_replay_script(Path(session.raw_script), session.start_url)
 
         try:
             process = await asyncio.create_subprocess_exec(

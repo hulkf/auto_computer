@@ -36,6 +36,7 @@ def test_codegen_command_uses_async_python_and_persistent_profile(monkeypatch, t
 
 def test_recorder_starts_and_stops_one_visible_process(monkeypatch, tmp_path) -> None:
     commands: list[tuple[str, ...]] = []
+    envs: list[dict[str, str]] = []
 
     class FakeProcess:
         def __init__(self, output: Path) -> None:
@@ -58,6 +59,7 @@ def test_recorder_starts_and_stops_one_visible_process(monkeypatch, tmp_path) ->
 
     async def fake_subprocess(*command: str, **kwargs):
         commands.append(command)
+        envs.append(kwargs.get("env", {}))
         output_arg = next(item for item in command if item.startswith("--output="))
         return FakeProcess(Path(output_arg.removeprefix("--output=")))
 
@@ -78,6 +80,8 @@ def test_recorder_starts_and_stops_one_visible_process(monkeypatch, tmp_path) ->
 
     asyncio.run(scenario())
     assert commands
+    assert envs[0]["PYTHONUTF8"] == "1"
+    assert envs[0]["PYTHONIOENCODING"] == "utf-8"
 
 
 def test_recording_replay_marks_saved_script_as_passed(monkeypatch, tmp_path) -> None:
@@ -156,3 +160,65 @@ def test_prepare_replay_script_adds_missing_initial_page(tmp_path) -> None:
     repaired = raw_script.read_text(encoding="utf-8")
     assert "page = await context.new_page()" in repaired
     assert repaired.index("page = await context.new_page()") < repaired.index("await page.goto")
+
+
+def test_prepare_replay_script_replaces_bootstrap_page_with_start_url(tmp_path) -> None:
+    """Regression: the recorder bootstrap page should not become replay steps."""
+
+    raw_script = tmp_path / "raw_codegen.py"
+    raw_script.write_text(
+        "\n".join(
+            [
+                "async def run(playwright):",
+                "    browser = await playwright.chromium.launch(channel='chrome', headless=False)",
+                "    context = await browser.new_context()",
+                "    page = await context.new_page()",
+                '    await page.goto("data:text/html;charset=utf-8,%3Cscript%3EsetTimeout%28%28%29%20%3D%3E%20window.location.replace%28%22https%3A//www.baidu.com/%22%29%2C%20800%29%3B%3C/script%3E")',
+                '    await page.locator("html").click()',
+                '    await page.locator("body").click()',
+                '    await page.get_by_role("link", name="新闻").click()',
+                "    await context.close()",
+                "    await browser.close()",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    CodegenRecorder._prepare_replay_script(raw_script, "https://www.baidu.com/")
+
+    repaired = raw_script.read_text(encoding="utf-8")
+    assert 'await page.goto("https://www.baidu.com/", wait_until="domcontentloaded", timeout=60000)' in repaired
+    assert "data:text/html" not in repaired
+    assert 'locator("html").click()' not in repaired
+    assert 'locator("body").click()' not in repaired
+
+
+def test_prepare_replay_script_relaxes_start_url_load_wait(tmp_path) -> None:
+    """Regression: some sites never finish the full load event during replay."""
+
+    raw_script = tmp_path / "raw_codegen.py"
+    raw_script.write_text(
+        "\n".join(
+            [
+                "async def run(playwright):",
+                "    browser = await playwright.chromium.launch(channel='chrome', headless=False)",
+                "    context = await browser.new_context()",
+                "    page = await context.new_page()",
+                '    await page.goto("https://www.baidu.com/")',
+                '    await page.get_by_role("link", name="news").click()',
+                "    await context.close()",
+                "    await browser.close()",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    CodegenRecorder._prepare_replay_script(raw_script, "https://www.baidu.com/")
+
+    repaired = raw_script.read_text(encoding="utf-8")
+    assert 'await page.goto("https://www.baidu.com/", wait_until="domcontentloaded", timeout=60000)' in repaired
+    assert 'get_by_role("link", name="news").click()' in repaired
+    return
+    assert 'get_by_role("link", name="新闻").click()' in repaired
