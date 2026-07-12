@@ -12,6 +12,22 @@
   </head>
   <body>
     <div id="app"></div>
+    <div id="boot-error" style="display:none;padding:40px;font-family:system-ui,sans-serif;color:#333">
+      <h2>🚨 控制台加载失败</h2>
+      <p>请打开浏览器开发者工具 (F12) 查看 Console 错误信息。</p>
+      <p>常见原因：</p>
+      <ul>
+        <li>JavaScript 语法错误</li>
+        <li>API 连接失败</li>
+        <li>浏览器缓存问题（尝试 Ctrl+F5 强制刷新）</li>
+      </ul>
+    </div>
+    <script>
+      window.onerror = function(msg, url, line) {
+        console.error('JS Error:', msg, 'at', url, 'line', line);
+        document.getElementById('boot-error').style.display = 'block';
+      };
+    </script>
     <script src="/console/app.js"></script>
   </body>
 </html>
