@@ -1,6 +1,7 @@
 """FastAPI 统一调度入口；生产环境只通过本模块调用固化业务。
 
 新增接口：
+- POST /api/v1/recordings/{recording_id}/test      回放测试录制素材
 - POST /api/v1/recordings/{recording_id}/finalize  一键固化录制素材
 - GET /api/v1/finalize/{finalize_id}               查询固化流水线状态
 - GET /api/v1/finalize                              列出所有固化记录
@@ -175,6 +176,20 @@ async def stop_recording() -> dict[str, Any]:
     except RuntimeError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     message = "录制已停止，原始脚本已保存" if session.output_ready else "录制已停止，但未生成有效脚本"
+    return result(msg=message, data=session.to_dict())
+
+
+@app.post("/api/v1/recordings/{recording_id}/test")
+async def test_recording(recording_id: str) -> dict[str, Any]:
+    """回放测试原始录制脚本；通过后才允许固化。"""
+
+    try:
+        session = await codegen_recorder.test_recording(recording_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    message = "录制回放测试通过" if session.replay_status == "passed" else "录制回放测试失败"
     return result(msg=message, data=session.to_dict())
 
 

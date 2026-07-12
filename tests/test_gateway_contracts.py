@@ -9,7 +9,9 @@ from core.ahk_runner import AhkRunner
 from gateway.business_registry import get_business_source, list_businesses, load_web_business
 from gateway.models import FinalizeRecord, TaskRequest
 from gateway.self_healer import SelfHealer
+from gateway.finalize_manager import FinalizeManager
 import gateway.business_registry as business_registry
+import gateway.finalize_manager as finalize_manager
 
 
 def test_demo_business_is_registered() -> None:
@@ -38,6 +40,45 @@ def test_legacy_finalize_record_does_not_require_description() -> None:
     )
 
     assert record.description == ""
+
+
+def test_finalize_requires_recording_replay_to_pass(monkeypatch, tmp_path) -> None:
+    recording_dir = tmp_path / "runtime" / "recordings" / "demo_record" / "rec-1"
+    recording_dir.mkdir(parents=True)
+    (recording_dir / "raw_codegen.py").write_text("print('ok')\n", encoding="utf-8")
+    (recording_dir / "session.json").write_text(
+        (
+            "{"
+            '"recording_id":"rec-1",'
+            '"business_name":"demo_record",'
+            '"start_url":"https://example.com",'
+            '"profile":"login",'
+            '"status":"completed",'
+            '"started_at":"2026-07-12T00:00:00+00:00",'
+            '"finished_at":"2026-07-12T00:01:00+00:00",'
+            f'"raw_script":"{(recording_dir / "raw_codegen.py").as_posix()}",'
+            f'"stdout_log":"{(recording_dir / "codegen.stdout.log").as_posix()}",'
+            f'"stderr_log":"{(recording_dir / "codegen.stderr.log").as_posix()}",'
+            '"exit_code":0,'
+            '"output_ready":true,'
+            '"replay_status":"untested"'
+            "}"
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(finalize_manager, "RUNTIME_DIR", tmp_path / "runtime")
+
+    async def scenario() -> None:
+        manager = FinalizeManager()
+        with pytest.raises(RuntimeError, match="回放测试通过"):
+            await manager.start(
+                recording_id="rec-1",
+                business_name="demo_record",
+                description="demo purpose",
+                start_url="https://example.com",
+            )
+
+    asyncio.run(scenario())
 
 
 def test_business_metadata_updates_preserve_user_description(monkeypatch, tmp_path) -> None:

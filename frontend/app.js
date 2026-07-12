@@ -34,6 +34,7 @@ const api = {
   startRecording: (body) => api.request("/api/v1/recordings/start", { method: "POST", body: JSON.stringify(body) }),
   currentRecording: () => api.request("/api/v1/recordings/current"),
   stopRecording: () => api.request("/api/v1/recordings/stop", { method: "POST" }),
+  testRecording: (recordingId) => api.request(`/api/v1/recordings/${encodeURIComponent(recordingId)}/test`, { method: "POST" }),
   finalizeRecording: (recordingId, body) => api.request(`/api/v1/recordings/${encodeURIComponent(recordingId)}/finalize`, { method: "POST", body: JSON.stringify(body) }),
   getFinalize: (id) => api.request(`/api/v1/finalize/${encodeURIComponent(id)}`),
   listFinalize: () => api.request("/api/v1/finalize"),
@@ -155,8 +156,11 @@ function statusBadge(status) {
     online: "在线",
     recording: "录制中",
     completed: "已保存",
+    untested: "待测试",
+    testing: "测试中",
+    passed: "测试通过",
   }[status] || status || "未知";
-  const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", healed_pending_review: "pending_actions", succeeded: "task_alt", failed: "warning", online: "hub", recording: "fiber_manual_record", completed: "save" }[status] || "circle";
+  const glyph = { queued: "pending", running: "autorenew", healing: "auto_fix_high", healed_pending_review: "pending_actions", succeeded: "task_alt", failed: "warning", online: "hub", recording: "fiber_manual_record", completed: "save", untested: "pending", testing: "autorenew", passed: "task_alt" }[status] || "circle";
   return `<span class="badge ${status}">${icon(glyph, status === "succeeded")} ${escapeHtml(label)}</span>`;
 }
 
@@ -794,15 +798,19 @@ function timelineItem(title, time, glyph) {
 function recorderWorkflow(session, finalize) {
   let current = 1;
   let failedStep = 0;
+  const replayStatus = session?.replay_status || "untested";
   if (session?.status === "recording") current = 2;
   else if (session?.status === "failed") { current = 3; failedStep = 3; }
-  else if (session?.status === "completed" && session?.output_ready) current = 4;
+  else if (session?.status === "completed" && session?.output_ready) {
+    current = replayStatus === "passed" ? 5 : 4;
+    if (replayStatus === "failed") failedStep = 4;
+  }
 
   if (finalize) {
-    const statusStep = { pending: 5, optimizing: 5, registering: 6, testing: 7, completed: 8 };
+    const statusStep = { pending: 6, optimizing: 6, registering: 7, testing: 8, completed: 9 };
     current = statusStep[finalize.status] || current;
     if (finalize.status === "failed") {
-      current = finalize.test_result ? 7 : finalize.registered ? 7 : finalize.source_path ? 6 : 5;
+      current = finalize.test_result ? 8 : finalize.registered ? 8 : finalize.source_path ? 7 : 6;
       failedStep = current;
     }
   }
@@ -811,10 +819,11 @@ function recorderWorkflow(session, finalize) {
     ["填写录制信息", "设置业务名、起始网址和登录 Profile", "edit_note"],
     ["人工录制完整流程", "在 Codegen 浏览器中完成点击、输入和页面操作", "fiber_manual_record"],
     ["停止并保存素材", "检查 raw_codegen.py 是否有效生成", "save"],
+    ["测试录制回放", "先确认 raw_codegen.py 原始流程能完整跑通", "play_circle"],
     ["配置正式业务", "填写项目作用并确认是否自动测试", "tune"],
     ["AI 优化脚本", "Codex整理定位器、参数、等待和异常处理", "auto_awesome"],
     ["注册网关业务", "生成 business 目录并加入调度白名单", "app_registration"],
-    ["完整流程测试", "从头运行固化脚本并验证结果", "fact_check"],
+    ["固化后测试", "从头运行固化脚本并验证结果", "fact_check"],
     ["正式业务完成", "可在业务列表查看并通过网关调度", "task_alt"],
   ];
   const steps = definitions.map(([title, detail, glyph], index) => {
@@ -822,7 +831,7 @@ function recorderWorkflow(session, finalize) {
     let status = number < current ? "done" : number === current ? "current" : "pending";
     if (failedStep === number) status = "error";
     if (finalize?.status === "completed") status = "done";
-    if (finalize?.status === "completed" && finalize.auto_test === false && number === 7) status = "skipped";
+    if (finalize?.status === "completed" && finalize.auto_test === false && number === 8) status = "skipped";
     return { number, title, detail, glyph, status };
   });
   return { current, failedStep, steps };
@@ -837,11 +846,12 @@ function workflowActionText(workflow, session, finalize) {
     1: "请先填写左侧录制信息，然后点击“开始录制”。",
     2: "请在弹出的浏览器中完成完整业务流程，完成后返回这里点击“停止并保存”。",
     3: "正在检查录制素材，请稍候。",
-    4: "请填写项目作用，确认固化设置，然后点击“一键固化并注册”。",
-    5: "Codex正在优化原始录制脚本，页面会自动更新状态。",
-    6: "正在生成正式 business 目录并注册网关白名单。",
-    7: "正在从头测试固化后的正式脚本。",
-    8: "业务已完成固化，可以前往业务列表查看和调度。",
+    4: "请先点击“测试录制流程”，确认原始录制能完整回放。",
+    5: "回放测试已通过，请填写项目作用，确认固化设置，然后点击“一键固化并注册”。",
+    6: "Codex正在优化原始录制脚本，页面会自动更新状态。",
+    7: "正在生成正式 business 目录并注册网关白名单。",
+    8: "正在从头测试固化后的正式脚本。",
+    9: "业务已完成固化，可以前往业务列表查看和调度。",
   }[workflow.current];
 }
 
@@ -851,11 +861,11 @@ function recorderWorkflowPanel(session, finalize) {
     <div class="card pad workflow-card">
       <div class="card-head">
         <div><h3 class="card-title">${icon("route")} 完整流程</h3><p class="card-subtitle">系统根据真实运行状态自动推进。</p></div>
-        <span class="badge ${workflow.failedStep ? "failed" : workflow.current === 8 ? "succeeded" : "running"}">第 ${workflow.current} / 8 步</span>
+        <span class="badge ${workflow.failedStep ? "failed" : workflow.current === 9 ? "succeeded" : "running"}">第 ${workflow.current} / 9 步</span>
       </div>
-      <div class="workflow-next ${workflow.failedStep ? "error" : workflow.current === 8 ? "success" : ""}" aria-live="polite">
-        ${icon(workflow.failedStep ? "warning" : workflow.current === 8 ? "check_circle" : "arrow_forward")}
-        <div><strong>${workflow.failedStep ? "需要处理" : workflow.current === 8 ? "流程已完成" : "当前需要做"}</strong><span>${escapeHtml(workflowActionText(workflow, session, finalize))}</span></div>
+      <div class="workflow-next ${workflow.failedStep ? "error" : workflow.current === 9 ? "success" : ""}" aria-live="polite">
+        ${icon(workflow.failedStep ? "warning" : workflow.current === 9 ? "check_circle" : "arrow_forward")}
+        <div><strong>${workflow.failedStep ? "需要处理" : workflow.current === 9 ? "流程已完成" : "当前需要做"}</strong><span>${escapeHtml(workflowActionText(workflow, session, finalize))}</span></div>
       </div>
       <ol class="workflow-steps" aria-label="业务录制与固化进度">
         ${workflow.steps.map((step) => `
@@ -867,7 +877,7 @@ function recorderWorkflowPanel(session, finalize) {
         `).join("")}
       </ol>
       ${finalize ? `<div class="workflow-meta"><span>流水线：<b class="mono">${escapeHtml(finalize.finalize_id)}</b></span><span>状态：${escapeHtml(finalize.status)}</span>${finalize.source_path ? `<span>脚本：<b class="mono">${escapeHtml(finalize.source_path)}</b></span>` : ""}</div>` : ""}
-      ${workflow.current === 8 ? `<button class="btn primary" data-route-button="business" style="width:100%;margin-top:16px">${icon("business_center")} 查看正式业务</button>` : ""}
+      ${workflow.current === 9 ? `<button class="btn primary" data-route-button="business" style="width:100%;margin-top:16px">${icon("business_center")} 查看正式业务</button>` : ""}
       ${workflow.failedStep && !finalize ? `<button class="btn danger" id="restart-recording-workflow" style="width:100%;margin-top:16px">${icon("replay")} 重新录制</button>` : ""}
       ${workflow.failedStep && finalize ? `<button class="btn danger" id="retry-finalize-workflow" style="width:100%;margin-top:16px">${icon("replay")} 返回固化设置并重试</button>` : ""}
     </div>
@@ -896,7 +906,9 @@ function recorderPage() {
   const session = state.recording;
   const active = session?.status === "recording";
   const notice = state.recordingNotice;
-  const canFinalize = session?.status === "completed" && session?.output_ready && !active;
+  const replayStatus = session?.replay_status || "untested";
+  const canTestRecording = session?.status === "completed" && session?.output_ready && !active && replayStatus !== "passed";
+  const canFinalize = session?.status === "completed" && session?.output_ready && replayStatus === "passed" && !active;
   const finalizeLocked = finalizeIsActive(state.finalize) || state.finalize?.status === "completed";
   return `
     ${pageHead("业务录制", "人工操作一次，Playwright Codegen 自动生成第一版流程素材。", `<button class="btn" id="refresh-recorder">${icon("refresh")} 刷新状态</button>`)}
@@ -918,6 +930,17 @@ function recorderPage() {
             ${notice ? `${icon(notice.kind === "error" ? "warning" : notice.kind === "success" ? "check_circle" : "hourglass_top")}<span>${escapeHtml(notice.message)}</span>` : `${icon("info")}<span>填写完整信息后点击开始，系统会弹出 Codegen 浏览器和 Inspector。</span>`}
           </div>
         </form>
+        ${canTestRecording ? `
+        <div class="divider"></div>
+        <div class="card-head">
+          <div><h3 class="card-title">${icon("play_circle")} 测试录制流程</h3><p class="card-subtitle">先回放 raw_codegen.py，测试通过后再进入固化。</p></div>
+          ${statusBadge(replayStatus)}
+        </div>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" id="test-recording" ${state.busy || replayStatus === "testing" ? "disabled" : ""}>${icon("science")} ${replayStatus === "testing" ? "测试中" : "测试录制流程"}</button>
+        </div>
+        <div id="recording-test-result" style="margin-top:12px"></div>
+        ` : ""}
         ${canFinalize ? `
         <div class="divider"></div>
         <div class="card-head">
@@ -942,6 +965,7 @@ function recorderPage() {
           <div class="divider"></div>
           ${session ? `
             <p>状态：${statusBadge(session.status)}</p>
+            <p>回放测试：${statusBadge(session.replay_status || "untested")}</p>
             <p class="tiny muted">业务：<span class="mono">${escapeHtml(session.business_name)}</span></p>
             <p class="tiny muted">开始：${escapeHtml(formatTime(session.started_at))}</p>
             <p class="tiny muted">原始脚本：</p>
@@ -1009,11 +1033,38 @@ function bindRecorder() {
       const payload = await api.stopRecording();
       state.recording = payload.data;
       state.recordingNotice = payload.data.output_ready
-        ? { kind: "success", message: "录制已保存，可以交给 Codex优化并固化。" }
+        ? { kind: "success", message: "录制已保存，请先测试录制流程，测试通过后再固化。" }
         : { kind: "error", message: payload.data.error || "未生成有效脚本，请查看错误日志后重录。" };
-      notify(payload.data.output_ready ? "录制已保存，可以交给 Codex固化" : "未生成有效脚本，请查看错误日志后重录");
+      notify(payload.data.output_ready ? "录制已保存，请先测试录制流程" : "未生成有效脚本，请查看错误日志后重录");
     } catch (error) {
       state.recordingNotice = { kind: "error", message: error.message };
+      notify(error.message);
+    } finally {
+      state.busy = false;
+      render();
+    }
+  });
+  document.getElementById("test-recording")?.addEventListener("click", async () => {
+    if (state.busy) return;
+    state.busy = true;
+    const resultBox = document.getElementById("recording-test-result");
+    resultBox.innerHTML = `${icon("hourglass_top")}<span>正在回放测试录制流程，请不要关闭测试浏览器……</span>`;
+    try {
+      const recordingId = state.recording?.recording_id;
+      if (!recordingId) throw new Error("没有可用的录制记录");
+      const payload = await api.testRecording(recordingId);
+      state.recording = payload.data;
+      const passed = payload.data?.replay_status === "passed";
+      state.recordingNotice = passed
+        ? { kind: "success", message: "录制回放测试通过，可以开始固化。" }
+        : { kind: "error", message: payload.data?.error || "录制回放测试失败，请调整流程后重新录制。" };
+      resultBox.innerHTML = passed
+        ? `<h3 class="card-title">${icon("check_circle", true)} 录制回放测试通过</h3>`
+        : `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 录制回放测试失败</h3><pre class="code-panel">${escapeHtml(JSON.stringify(payload.data?.replay_result || {}, null, 2))}</pre>`;
+      notify(passed ? "录制回放测试通过" : "录制回放测试失败");
+    } catch (error) {
+      state.recordingNotice = { kind: "error", message: error.message };
+      resultBox.innerHTML = `<h3 class="card-title" style="color:var(--error)">${icon("warning")} 测试失败</h3><pre class="code-panel">${escapeHtml(JSON.stringify(error.payload || { msg: error.message }, null, 2))}</pre>`;
       notify(error.message);
     } finally {
       state.busy = false;

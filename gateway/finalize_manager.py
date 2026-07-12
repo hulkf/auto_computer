@@ -87,6 +87,9 @@ class FinalizeManager:
         raw_script = recording_dir / "raw_codegen.py"
         if not raw_script.is_file():
             raise RuntimeError("录制素材尚未生成，请先完成录制")
+        session = read_json(recording_dir / "session.json") or {}
+        if session.get("replay_status") != "passed":
+            raise RuntimeError("录制流程尚未回放测试通过，不能固化")
 
         finalize_id = uuid.uuid4().hex
         record = FinalizeRecord(

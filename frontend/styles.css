@@ -555,6 +555,7 @@ a {
 .badge.success,
 .badge.succeeded,
 .badge.completed,
+.badge.passed,
 .badge.active,
 .badge.online {
   color: #0b5a38;
@@ -563,6 +564,7 @@ a {
 
 .badge.running,
 .badge.recording,
+.badge.testing,
 .badge.web {
   color: #0d4f68;
   background: rgba(173, 226, 245, 0.35);
@@ -586,6 +588,11 @@ a {
 }
 
 .badge.queued {
+  color: var(--on-surface-variant);
+  background: var(--surface-highest);
+}
+
+.badge.untested {
   color: var(--on-surface-variant);
   background: var(--surface-highest);
 }

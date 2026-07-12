@@ -38,6 +38,9 @@ class RecordingSession:
     exit_code: int | None = None
     output_ready: bool = False
     error: str | None = None
+    replay_status: str = "untested"
+    replayed_at: str | None = None
+    replay_result: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -119,6 +122,17 @@ class CodegenRecorder:
 
     def _save_session(self, session: RecordingSession) -> None:
         write_json(self._session_dir(session) / "session.json", session.to_dict())
+
+    def _load_session_by_id(self, recording_id: str) -> RecordingSession | None:
+        for manifest in RECORDING_DIR.glob("*/*/session.json"):
+            payload = read_json(manifest)
+            if not isinstance(payload, dict) or payload.get("recording_id") != recording_id:
+                continue
+            try:
+                return RecordingSession(**payload)
+            except TypeError:
+                return None
+        return None
 
     async def start(self, business_name: str, start_url: str, profile: str) -> RecordingSession:
         """Launch visible Codegen and return immediately while the user records."""
@@ -206,6 +220,90 @@ class CodegenRecorder:
 
         async with self._lock:
             return RecordingSession(**self._session.to_dict()) if self._session else None
+
+    async def test_recording(
+        self,
+        recording_id: str,
+        *,
+        timeout_seconds: float = 300,
+    ) -> RecordingSession:
+        """Replay the saved raw Codegen script once before production hardening."""
+
+        async with self._lock:
+            session = self._session if self._session and self._session.recording_id == recording_id else None
+            if not session:
+                session = self._load_session_by_id(recording_id)
+            if not session:
+                raise KeyError(f"录制记录不存在: {recording_id}")
+            if session.status != "completed" or not session.output_ready:
+                raise RuntimeError("录制素材尚未保存成功，不能测试")
+            if self._process and self._process.returncode is None:
+                raise RuntimeError("录制仍在进行中，请先停止录制")
+            session.replay_status = "testing"
+            session.replayed_at = utc_now_iso()
+            session.replay_result = None
+            session.error = None
+            self._save_session(session)
+            if self._session and self._session.recording_id == recording_id:
+                self._session = session
+
+        session_dir = self._session_dir(session)
+        stdout_path = session_dir / "replay.stdout.log"
+        stderr_path = session_dir / "replay.stderr.log"
+        env = {**os.environ, "PYTHONUTF8": "1"}
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                sys.executable,
+                session.raw_script,
+                cwd=str(session_dir),
+                env=env,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), timeout=timeout_seconds
+                )
+                exit_code = process.returncode
+                timed_out = False
+            except TimeoutError:
+                process.kill()
+                stdout, stderr = await process.communicate()
+                exit_code = process.returncode
+                timed_out = True
+        except Exception as exc:
+            stdout = b""
+            stderr = str(exc).encode("utf-8", errors="replace")
+            exit_code = 500
+            timed_out = False
+
+        stdout_path.write_bytes(stdout)
+        stderr_path.write_bytes(stderr)
+        replay_result = {
+            "exit_code": exit_code,
+            "timed_out": timed_out,
+            "stdout_log": str(stdout_path),
+            "stderr_log": str(stderr_path),
+        }
+
+        async with self._lock:
+            fresh = self._load_session_by_id(recording_id) or session
+            fresh.replayed_at = utc_now_iso()
+            fresh.replay_result = replay_result
+            if timed_out:
+                fresh.replay_status = "failed"
+                fresh.error = f"录制回放测试超时，超过 {timeout_seconds:g} 秒"
+            elif exit_code == 0:
+                fresh.replay_status = "passed"
+                fresh.error = None
+            else:
+                fresh.replay_status = "failed"
+                fresh.error = f"录制回放测试失败，exit_code={exit_code}"
+            self._save_session(fresh)
+            if self._session and self._session.recording_id == recording_id:
+                self._session = fresh
+            return RecordingSession(**fresh.to_dict())
 
     async def stop(self) -> RecordingSession:
         """Stop Codegen, wait for output flush, and return saved recording paths."""
