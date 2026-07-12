@@ -28,10 +28,11 @@ from core.codegen_recorder import CodegenRecorder
 load_dotenv(PROJECT_ROOT / ".env")
 
 from core.playwright_base import BrowserContextPool
-from gateway.business_registry import list_businesses
+from gateway.business_registry import list_businesses, update_business_metadata
 from gateway.finalize_manager import FinalizeManager
 from gateway.models import (
     BatchTaskRequest,
+    BusinessDescriptionUpdate,
     FinalizeRecordingRequest,
     RecordingStartRequest,
     ReviewHealRequest,
@@ -108,6 +109,27 @@ async def businesses() -> dict[str, Any]:
     return result(data=list_businesses())
 
 
+@app.put("/api/v1/businesses/{business_name}/description")
+async def save_business_description(
+    business_name: str,
+    request: BusinessDescriptionUpdate,
+) -> dict[str, Any]:
+    """Save a user-edited project purpose for a registered business."""
+
+    try:
+        update_business_metadata(
+            business_name,
+            description=request.description,
+            updated_by="user",
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    business = next(item for item in list_businesses() if item["name"] == business_name)
+    return result(msg="项目作用已保存", data=business)
+
+
 @app.get("/api/v1/businesses/{business}/health")
 async def business_health(business: str) -> dict[str, Any]:
     """查询业务健康度指标。"""
@@ -164,6 +186,7 @@ async def finalize_recording(recording_id: str, request: FinalizeRecordingReques
         record = await finalize_manager.start(
             recording_id=recording_id,
             business_name=request.business_name,
+            description=request.description,
             start_url=request.start_url,
             auto_test=request.auto_test,
             test_params=request.test_params,

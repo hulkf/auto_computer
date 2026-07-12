@@ -114,6 +114,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_gateway.ps1
 ```python
 "my_desktop_job": BusinessDefinition(
     kind="desktop",
+    description="调用桌面客户端完成指定文件的批量处理。",
     executable="business/my_desktop_job/task.exe",
     source="business/my_desktop_job/task.ahk",
     cwd="business/my_desktop_job",

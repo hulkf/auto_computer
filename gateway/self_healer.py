@@ -23,6 +23,7 @@ from typing import Any
 import httpx
 
 from core.common_utils import PROJECT_ROOT, RUNTIME_DIR, get_logger, read_json, save_snapshot, write_json
+from gateway.business_registry import get_business_metadata, update_business_metadata
 
 
 class SelfHealer:
@@ -198,7 +199,17 @@ class SelfHealer:
             "healing_fixed_source": fixed_source,
             "healing_evidence_path": str(evidence_path),
             "healing_codex_summary": body.get("summary", "") if isinstance(body, dict) else "",
+            "healing_previous_ai_metadata": get_business_metadata(business),
         }
+
+        try:
+            update_business_metadata(
+                business,
+                ai_summary=audit_info["healing_codex_summary"],
+                updated_by="ai_self_heal",
+            )
+        except Exception:
+            self.logger.exception("Failed to update business AI summary")
 
         return True, audit_info
 

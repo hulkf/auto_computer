@@ -20,6 +20,7 @@ const api = {
   },
   health: () => api.request("/health"),
   businesses: () => api.request("/api/v1/businesses"),
+  saveBusinessDescription: (name, description) => api.request(`/api/v1/businesses/${encodeURIComponent(name)}/description`, { method: "PUT", body: JSON.stringify({ description }) }),
   businessHealth: (business) => api.request(`/api/v1/businesses/${encodeURIComponent(business)}/health`),
   submitTask: (body) => api.request("/api/v1/tasks", { method: "POST", body: JSON.stringify(body) }),
   submitBatch: (body) => api.request("/api/v1/tasks/batch", { method: "POST", body: JSON.stringify(body) }),
@@ -415,7 +416,7 @@ function taskTable(tasks) {
 }
 
 function businessPage() {
-  const businesses = state.businesses.length ? state.businesses : [{ name: "demo_search", kind: "web", module: "business.demo_search.task", source: "business/demo_search/task.py" }];
+  const businesses = state.businesses.length ? state.businesses : [{ name: "demo_search", description: "演示如何通过统一中台执行 Bing 搜索并提取结果标题。", kind: "web", module: "business.demo_search.task", source: "business/demo_search/task.py" }];
   const selected = state.selectedBusiness || businesses[0];
   return `
     ${pageHead("业务列表", "管理和查看当前已注册、可调度的业务白名单。", `<button class="btn">${icon("file_download")} 导入 Schema</button><button class="btn primary">${icon("add")} 注册业务</button>`)}
@@ -427,11 +428,12 @@ function businessPage() {
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>名称</th><th>类型</th><th>模块 / 路径</th><th>源码路径</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>名称</th><th>项目作用</th><th>类型</th><th>模块 / 路径</th><th>源码路径</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
               ${businesses.map((biz) => `
                 <tr>
                   <td><strong>${escapeHtml(biz.name)}</strong></td>
+                  <td>${escapeHtml(biz.description || "暂未填写项目说明")}</td>
                   <td>${kindBadge(biz.kind)}</td>
                   <td class="mono tiny">${escapeHtml(biz.module || biz.executable || "-")}</td>
                   <td class="mono tiny">${escapeHtml(biz.source || "-")}</td>
@@ -456,7 +458,7 @@ function businessDrawer(biz) {
       <div class="card-head">
         <div>
           <h3 class="card-title">${icon("close")} ${escapeHtml(biz.name)}</h3>
-          <p class="card-subtitle">业务详细规格</p>
+          <p class="card-subtitle">${escapeHtml(biz.description || "暂未填写项目说明")}</p>
         </div>
         <button class="icon-btn">${icon("share")}</button>
       </div>
@@ -464,6 +466,16 @@ function businessDrawer(biz) {
         <div class="span-6 card pad" style="background:var(--surface-low)"><div class="label-caps">执行次数</div><h2>12.4k</h2><span class="badge success">${icon("trending_up")} 12%</span></div>
         <div class="span-6 card pad" style="background:var(--surface-low)"><div class="label-caps">错误率</div><h2>0.02%</h2><span class="badge success">${icon("trending_down")} 4%</span></div>
       </div>
+      <div class="divider"></div>
+      <h3 class="card-title">${icon("description")} 项目作用</h3>
+      <div class="field" style="margin-top:12px">
+        <textarea class="input" id="business-description" rows="4">${escapeHtml(biz.description || "")}</textarea>
+        <button class="btn primary" id="save-business-description" data-business-name="${escapeHtml(biz.name)}">${icon("save")} 保存说明</button>
+      </div>
+      <div class="divider"></div>
+      <h3 class="card-title">${icon("auto_awesome")} 最近 AI 变更摘要</h3>
+      <p class="muted">${escapeHtml(biz.ai_summary || "暂无 AI 变更摘要")}</p>
+      <p class="tiny muted">更新时间：${escapeHtml(formatTime(biz.ai_summary_updated_at))} · 来源：${escapeHtml(biz.ai_summary_updated_by || "-")}</p>
       <div class="divider"></div>
       <h3 class="card-title">参数 Schema <span class="badge desktop">JSON 严格模式</span></h3>
       <table style="margin-top:12px">
@@ -776,6 +788,7 @@ function recorderPage() {
         </div>
         <div class="grid" style="margin-top:12px">
           <div class="field"><label>固化业务名</label><input class="input" id="finalize-business" value="${escapeHtml(session?.business_name || "new_business")}" pattern="[a-z][a-z0-9_]+" /></div>
+          <div class="field"><label>项目作用</label><textarea class="input" id="finalize-description" rows="3" placeholder="例如：登录后台并批量导出每日订单">${escapeHtml(session?.description || "")}</textarea></div>
           <div class="field"><label>起始网址</label><input class="input" id="finalize-url" type="url" value="${escapeHtml(session?.start_url || "")}" placeholder="https://example.com" /></div>
         </div>
         <div class="actions" style="margin-top:12px">
@@ -877,11 +890,12 @@ function bindRecorder() {
       const body = {
         recording_id: recordingId,
         business_name: document.getElementById("finalize-business").value.trim(),
+        description: document.getElementById("finalize-description").value.trim(),
         start_url: document.getElementById("finalize-url").value.trim(),
         auto_test: document.getElementById("finalize-test")?.checked ?? true,
         test_params: {},
       };
-      if (!body.business_name || !body.start_url) throw new Error("请填写业务名称和起始网址");
+      if (!body.business_name || !body.description || !body.start_url) throw new Error("请填写业务名称、项目作用和起始网址");
       const payload = await api.finalizeRecording(recordingId, body);
       resultBox.innerHTML = `<h3 class="card-title">${icon("check_circle", true)} 固化流水线已启动</h3><p class="mono">流水线 ID: ${escapeHtml(payload.data?.finalize_id || "")}</p><p class="muted">状态: ${escapeHtml(payload.data?.status || "")}</p><button class="btn ghost" data-route-button="business">查看业务列表 ${icon("arrow_forward")}</button>`;
       notify("固化流水线已启动");
@@ -980,6 +994,20 @@ function bindBusiness() {
     state.selectedBusiness = state.businesses.find((biz) => biz.name === node.dataset.business) || null;
     render();
   }));
+  document.getElementById("save-business-description")?.addEventListener("click", async (event) => {
+    const businessName = event.currentTarget.dataset.businessName;
+    const description = document.getElementById("business-description").value.trim();
+    if (!description) return notify("项目作用不能为空");
+    try {
+      const payload = await api.saveBusinessDescription(businessName, description);
+      state.businesses = state.businesses.map((biz) => biz.name === businessName ? payload.data : biz);
+      state.selectedBusiness = payload.data;
+      notify("项目作用已保存");
+      render();
+    } catch (error) {
+      notify(error.message);
+    }
+  });
 }
 
 function bindHealReview() {

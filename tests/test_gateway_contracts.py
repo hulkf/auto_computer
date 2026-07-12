@@ -6,9 +6,10 @@ import pytest
 from pydantic import ValidationError
 
 from core.ahk_runner import AhkRunner
-from gateway.business_registry import get_business_source, load_web_business
-from gateway.models import TaskRequest
+from gateway.business_registry import get_business_source, list_businesses, load_web_business
+from gateway.models import FinalizeRecord, TaskRequest
 from gateway.self_healer import SelfHealer
+import gateway.business_registry as business_registry
 
 
 def test_demo_business_is_registered() -> None:
@@ -16,6 +17,50 @@ def test_demo_business_is_registered() -> None:
     assert source.name == "task.py"
     assert source.parent.name == "demo_search"
     assert callable(load_web_business("demo_search"))
+
+
+def test_business_list_includes_project_description() -> None:
+    demo = next(item for item in list_businesses() if item["name"] == "demo_search")
+
+    assert demo["description"] == "演示如何通过统一中台执行 Bing 搜索并提取结果标题。"
+
+
+def test_legacy_finalize_record_does_not_require_description() -> None:
+    record = FinalizeRecord.model_validate(
+        {
+            "finalize_id": "legacy",
+            "recording_id": "recording",
+            "business_name": "legacy_business",
+            "status": "completed",
+            "created_at": "2026-07-11T00:00:00+00:00",
+            "updated_at": "2026-07-11T00:00:00+00:00",
+        }
+    )
+
+    assert record.description == ""
+
+
+def test_business_metadata_updates_preserve_user_description(monkeypatch, tmp_path) -> None:
+    source = tmp_path / "business" / "sample" / "task.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("", encoding="utf-8")
+    monkeypatch.setattr(business_registry, "PROJECT_ROOT", tmp_path)
+
+    business_registry.write_business_metadata_for_source(
+        source,
+        description="用户填写的项目作用",
+        updated_by="user",
+    )
+    metadata = business_registry.write_business_metadata_for_source(
+        source,
+        ai_summary="AI完成了选择器修复",
+        updated_by="ai_self_heal",
+    )
+
+    assert metadata["description"] == "用户填写的项目作用"
+    assert metadata["description_updated_by"] == "user"
+    assert metadata["ai_summary"] == "AI完成了选择器修复"
+    assert metadata["ai_summary_updated_by"] == "ai_self_heal"
 
 
 def test_unknown_business_is_rejected() -> None:

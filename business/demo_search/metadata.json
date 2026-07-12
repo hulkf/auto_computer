@@ -1,0 +1,10 @@
+{
+  "description": "演示如何通过统一中台执行 Bing 搜索并提取结果标题。",
+  "ai_summary": "示例业务已接入固定 Playwright 流程、失败元素诊断和统一自愈链路。",
+  "description_updated_by": "user",
+  "description_updated_at": "2026-07-12T06:00:06.595770+00:00",
+  "ai_summary_updated_by": "initial",
+  "ai_summary_updated_at": "2026-07-12T00:00:00+08:00",
+  "updated_at": "2026-07-12T05:59:51.127561+00:00",
+  "updated_by": "user"
+}

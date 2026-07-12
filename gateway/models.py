@@ -73,6 +73,12 @@ class RecordingStartRequest(BaseModel):
     profile: str = Field(default="default", min_length=1, max_length=64)
 
 
+class BusinessDescriptionUpdate(BaseModel):
+    """User-editable project purpose for a registered business."""
+
+    description: str = Field(min_length=2, max_length=300)
+
+
 class TaskRecord(BaseModel):
     """可持久化的完整任务记录。"""
 
@@ -93,6 +99,7 @@ class TaskRecord(BaseModel):
     healing_diff: str | None = None
     healing_original_source: str | None = None
     healing_fixed_source: str | None = None
+    healing_previous_ai_metadata: dict[str, Any] | None = None
     healing_reviewed: bool = False
     healing_reviewed_at: str | None = None
     healing_reviewer_note: str | None = None
@@ -103,6 +110,7 @@ class FinalizeRecordingRequest(BaseModel):
 
     recording_id: str = Field(min_length=1)
     business_name: str = Field(min_length=2, max_length=64)
+    description: str = Field(min_length=2, max_length=300)
     start_url: str = Field(min_length=8, max_length=2048)
     auto_test: bool = True
     test_params: dict[str, Any] = Field(default_factory=dict)
@@ -114,6 +122,7 @@ class FinalizeRecord(BaseModel):
     finalize_id: str
     recording_id: str
     business_name: str
+    description: str = ""
     status: FinalizeStatus
     created_at: str
     updated_at: str

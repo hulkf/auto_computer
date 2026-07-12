@@ -23,6 +23,7 @@ from gateway.business_registry import (
     get_business_source,
     get_desktop_executable,
     load_web_business,
+    restore_business_ai_metadata,
 )
 from gateway.models import BusinessHealth, BusinessHealthMetrics, ReviewHealRequest, TaskRecord, TaskRequest, TaskStatus
 from gateway.self_healer import SelfHealer
@@ -149,6 +150,10 @@ class TaskManager:
                     try:
                         source_path = Path(record.business_source)
                         source_path.write_text(record.healing_original_source, encoding="utf-8")
+                        restore_business_ai_metadata(
+                            record.request.business,
+                            record.healing_previous_ai_metadata or {},
+                        )
                     except Exception:
                         pass  # 回滚失败不影响状态标记
                 record.status = TaskStatus.FAILED
@@ -345,6 +350,7 @@ class TaskManager:
                     record.healing_diff = audit_info.get("healing_diff")
                     record.healing_original_source = audit_info.get("healing_original_source")
                     record.healing_fixed_source = audit_info.get("healing_fixed_source")
+                    record.healing_previous_ai_metadata = audit_info.get("healing_previous_ai_metadata")
                     await self._save(record, "healing_completed")
 
                     # 修复后重跑一次

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from core.common_utils import PROJECT_ROOT, RUNTIME_DIR, get_logger, read_json, utc_now_iso, write_json
+from gateway.business_registry import register_business_in_memory, write_business_metadata_for_source
 from gateway.models import FinalizeRecord, FinalizeStatus
 
 
@@ -68,6 +69,7 @@ class FinalizeManager:
         self,
         recording_id: str,
         business_name: str,
+        description: str,
         start_url: str,
         auto_test: bool = True,
         test_params: dict[str, Any] | None = None,
@@ -91,6 +93,7 @@ class FinalizeManager:
             finalize_id=finalize_id,
             recording_id=recording_id,
             business_name=business_name,
+            description=description,
             status=FinalizeStatus.PENDING,
             created_at=utc_now_iso(),
             updated_at=utc_now_iso(),
@@ -168,6 +171,14 @@ class FinalizeManager:
                 )
 
             record.source_path = str(source_path.resolve())
+            output = record.codex_output.get("output") if record.codex_output else None
+            ai_summary = output.get("summary", "") if isinstance(output, dict) else ""
+            write_business_metadata_for_source(
+                source_path,
+                description=record.description,
+                ai_summary=ai_summary,
+                updated_by="ai_finalize",
+            )
             record.updated_at = utc_now_iso()
             await self._save(record)
 
@@ -176,7 +187,11 @@ class FinalizeManager:
             record.updated_at = utc_now_iso()
             await self._save(record)
 
-            registered = await self._register_business(record.business_name, source_path)
+            registered = await self._register_business(
+                record.business_name,
+                record.description,
+                source_path,
+            )
             if not registered:
                 record.status = FinalizeStatus.FAILED
                 record.error = "业务注册失败，请检查 gateway/business_registry.py"
@@ -242,7 +257,12 @@ class FinalizeManager:
             )
 
             # 准备 Codex 提示
-            prompt = self._build_codex_prompt(record.business_name, start_url, raw_content)
+            prompt = self._build_codex_prompt(
+                record.business_name,
+                record.description,
+                start_url,
+                raw_content,
+            )
 
             output_dir = workspace / ".finalize"
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -324,7 +344,13 @@ class FinalizeManager:
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
 
-    def _build_codex_prompt(self, business_name: str, start_url: str, raw_content: str) -> str:
+    def _build_codex_prompt(
+        self,
+        business_name: str,
+        description: str,
+        start_url: str,
+        raw_content: str,
+    ) -> str:
         """构建 Codex 优化提示。"""
 
         return (
@@ -340,7 +366,8 @@ class FinalizeManager:
             "7. 只输出业务专属代码，不要包含浏览器初始化、异常处理等公共逻辑\n"
             "8. 函数签名必须是: async def run(params, browser_pool, *, task_id)\n"
             f"9. 业务名: {business_name}\n"
-            f"10. 起始网址: {start_url}\n\n"
+            f"10. 项目作用: {description}\n"
+            f"11. 起始网址: {start_url}\n\n"
             "原始脚本：\n"
             "```python\n"
             f"{raw_content}\n"
@@ -348,7 +375,12 @@ class FinalizeManager:
             "请返回 JSON 格式: {\"fixed\": true, \"source\": \"优化后的完整源码\", \"summary\": \"优化说明\"}"
         )
 
-    async def _register_business(self, business_name: str, source_path: Path) -> bool:
+    async def _register_business(
+        self,
+        business_name: str,
+        description: str,
+        source_path: Path,
+    ) -> bool:
         """自动注册业务到白名单文件。"""
 
         try:
@@ -361,6 +393,12 @@ class FinalizeManager:
             # 检查是否已注册
             if f'"{business_name}"' in content:
                 logger.info("Business already registered: %s", business_name)
+                register_business_in_memory(
+                    business_name,
+                    description=description,
+                    module=f"business.{business_name}.task",
+                    source=source_path.relative_to(PROJECT_ROOT).as_posix(),
+                )
                 return True
 
             # 构建注册条目
@@ -370,6 +408,7 @@ class FinalizeManager:
             new_entry = (
                 f'    "{business_name}": BusinessDefinition(\n'
                 f'        kind="web",\n'
+                f"        description={description!r},\n"
                 f'        module="{module_path}",\n'
                 f'        source="{relative_source}",\n'
                 f"    ),\n"
@@ -390,6 +429,12 @@ class FinalizeManager:
 
             if new_content != content:
                 registry_path.write_text(new_content, encoding="utf-8")
+                register_business_in_memory(
+                    business_name,
+                    description=description,
+                    module=module_path,
+                    source=relative_source,
+                )
                 logger.info("Business registered: %s", business_name)
                 return True
 
